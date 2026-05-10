@@ -77,7 +77,7 @@ export interface BlizzardLeaderboardIndex {
 
 export interface BlizzardLeaderboardGroup {
   ranking: number;
-  duration: number;
+  duration_ms: number;
   completed_timestamp: number;
   keystone_level: number;
   members: unknown[];
@@ -85,6 +85,7 @@ export interface BlizzardLeaderboardGroup {
 
 export interface BlizzardLeaderboard {
   map_challenge_mode_id: number; // challenge mode ID from the URL, not map.id
+  name: string;
   map: { name: string; id: number };
   period: number;
   leading_groups: BlizzardLeaderboardGroup[];
