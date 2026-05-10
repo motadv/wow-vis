@@ -2,51 +2,83 @@
 
 Projeto desenvolvido para as disciplinas de **Visualização de Dados** e **Game Analytics** do programa de Mestrado em Computação da **Universidade Federal Fluminense (UFF)**.
 
-Este projeto visa explorar e visualizar dados complexos da API de _World of Warcraft_ (Blizzard), utilizando tecnologias modernas de processamento in-browser para gerar insights sobre a economia e o comportamento dos jogadores.
-
 ---
 
 ## 👥 Integrantes
 
-- **Bruna Becker** ([GitHub/LinkedIn Link])
-- **Pedro Lanzarini** ([GitHub/LinkedIn Link])
-- **Rodrigo Mota** ([GitHub/LinkedIn Link])
+- **Bruna Becker**
+- **Pedro Lanzarini**
+- **Rodrigo Mota**
 
 ---
 
-## 🎯 A Pergunta de Pesquisa
+## 🎯 Pergunta de Pesquisa
 
-> **"[INSERIR AQUI A PERGUNTA DE PESQUISA]"**
+> **"Como a era de origem de uma masmorra e seu histórico de reintrodução influenciam a adoção por jogadores de alto nível e a progressão de keystones ao longo das temporadas de Mythic+?"**
+
+Duas sub-questões norteiam a análise:
+
+- **Questão A (Era):** A era de origem de uma masmorra prediz sua adoção quando ela entra na rotação de Mythic+?
+- **Questão B (Reintrodução):** Quando uma masmorra é reintroduzida após ausência de uma ou mais temporadas, a familiaridade dos jogadores resulta em keystones mais altos em comparação à sua primeira aparição?
+
+> **Prioridade:** Se o escopo forçar a escolha de uma única questão, a **Questão B é preferida** — é mais original e conta uma história mais clara sobre o ciclo de design da Blizzard.
+
+---
+
+## ⚠️ Limitação dos Dados
+
+A API pública da Blizzard expõe apenas o **topo do leaderboard por reino conectado** — não o total de runs da população geral. Todos os achados refletem comportamento de **jogadores de alto nível** (key pushers), não da base de jogadores como um todo. Isso deve ser declarado explicitamente no trabalho.
 
 ---
 
 ## 🛠️ Stack Tecnológica
 
-O projeto utiliza uma stack de ponta focada em performance e tipagem estática:
-
-- **[Vite](https://vitejs.dev/):** Build tool ultra-rápida para o frontend.
-- **[TypeScript](https://www.typescriptlang.org/):** Garantia de tipos para manipulação segura dos dados da API.
-- **[D3.js](https://d3js.org/):** Biblioteca principal para a criação de visualizações personalizadas e interativas.
-- **[DuckDB-Wasm](https://duckdb.org/docs/api/wasm/overview):** Banco de dados SQL analítico executando diretamente no navegador para processamento de grandes volumes de dados (OLAP).
-- **[Tailwind CSS](https://tailwindcss.com/):** Framework utilitário para construção da interface e layout do dashboard.
+- **[Vite](https://vitejs.dev/)** + **[TypeScript](https://www.typescriptlang.org/):** Build e tipagem estática.
+- **[D3.js](https://d3js.org/):** Visualizações interativas em SVG.
+- **[DuckDB-Wasm](https://duckdb.org/docs/api/wasm/overview):** OLAP in-browser via WebAssembly para queries sobre os dados de Parquet.
+- **[Tailwind CSS](https://tailwindcss.com/):** Estilização via CDN.
+- **Node.js + [tsx](https://github.com/privatenumber/tsx) + [duckdb](https://www.npmjs.com/package/duckdb):** Script offline para coleta e conversão dos dados da API.
+- **[Vitest](https://vitest.dev/):** Testes unitários para o pipeline de dados.
 
 ---
 
 ## 📂 Estrutura do Projeto
 
 ```text
-├── public/             # Arquivos estáticos e snapshots de dados da API (JSON/Parquet)
+├── public/
+│   ├── map.png                  # Mapa do mundo de Azeroth (asset manual)
+│   └── data/
+│       ├── dungeons.json        # Manifesto de masmorras (gerado + editado manualmente)
+│       └── season-N.parquet     # Dados de leaderboard por temporada (gerado pelo script)
+├── scripts/
+│   └── fetch/                   # Script offline de coleta da API Blizzard
+│       ├── auth.ts              # OAuth client credentials
+│       ├── blizzard.ts          # Wrappers para endpoints da API
+│       ├── transform.ts         # Transformação dos dados brutos
+│       ├── write.ts             # Escrita em Parquet e JSON
+│       └── index.ts             # Orquestrador CLI
 ├── src/
-│   ├── api/            # Manipulação de dados da API da Blizzard
-│   ├── charts/         # Gráficos interativos via D3.js
-│   ├── db/             # Banco de dados DuckDB-Wasm
-│   └── utils/          # Conjunto de funções utilitárias
-│   ├── config.ts       # Configurações globais
-│   ├── main.ts         # Ponto de entrada do projeto
-│   ├── style.css       # Arquivo de estilização geral do projeto + Tailwind
-├── index.html          # Página principal do dashboard
-├── package.json        # Arquivo de dependências e scripts
-└── tsconfig.json       # Configurações de compilação do TypeScript
+│   ├── types.ts                 # Tipos compartilhados da camada de visualização
+│   ├── state.ts                 # Estado reativo global (selectedSeason, selectedDungeon)
+│   ├── config.ts                # Paleta de eras, dimensões do mapa, constantes
+│   ├── db/
+│   │   ├── init.ts              # Inicialização do DuckDB-Wasm e carregamento de Parquet
+│   │   └── queries.ts           # Funções de query tipadas
+│   ├── charts/
+│   │   ├── map.ts               # Mapa SVG com nós de masmorras
+│   │   ├── scrubber.ts          # Timeline de temporadas
+│   │   ├── filters.ts           # Filtros de era e toggle de modo de visualização
+│   │   ├── init.ts              # Orquestrador das visualizações
+│   │   └── detail/
+│   │       ├── index.ts         # Shell do painel de detalhes
+│   │       ├── era.ts           # Visão de Era (Questão A)
+│   │       └── reintroduction.ts# Visão de Reintrodução (Questão B)
+│   ├── main.ts                  # Ponto de entrada
+│   └── style.css                # Reset base
+├── index.html                   # Dashboard principal
+├── vite.config.ts               # Config do Vite (headers COOP/COEP para DuckDB-Wasm)
+├── tsconfig.json                # Config TypeScript para o browser
+└── scripts/tsconfig.json        # Config TypeScript para os scripts Node.js
 ```
 
 ---
@@ -55,40 +87,70 @@ O projeto utiliza uma stack de ponta focada em performance e tipagem estática:
 
 ### Pré-requisitos
 
-- Node.js (v18 ou superior)
-- Uma conta no [Blizzard Battle.net Developer Portal](https://develop.battle.net/) para obter suas credenciais de API.
+- Node.js v18+
+- Conta no [Blizzard Battle.net Developer Portal](https://develop.battle.net/) para obter credenciais de API
 
 ### Instalação
 
-1. Clone o repositório:
-   ```bash
-   git clone [URL AQUI]
-   ```
-2. Instale as dependências:
-   ```bash
-   npm install
-   ```
-3. Configure as variáveis de ambiente:
-   Crie um arquivo `.env` na raiz do projeto com suas chaves:
-   ```env
-   VITE_BLIZZARD_CLIENT_ID=seu_id_aqui
-   VITE_BLIZZARD_CLIENT_SECRET=sua_secret_aqui
-   ```
+```bash
+npm install
+```
+
+Configure o `.env` na raiz:
+
+```env
+VITE_BLIZZARD_CLIENT_ID=seu_id_aqui
+VITE_BLIZZARD_CLIENT_SECRET=sua_secret_aqui
+```
+
+### Coleta de dados (executar uma vez)
+
+```bash
+npm run fetch
+```
+
+Este script autentica na API da Blizzard, busca os dados de leaderboard de Mythic+ para todas as temporadas completas (amostrando reinos de alta população nos EUA) e grava os resultados em `public/data/`.
+
+Após a execução, edite manualmente `public/data/dungeons.json` e preencha para cada masmorra:
+- `era` — era de origem (`"vanilla"`, `"tbc"`, `"wotlk"`, `"cata"`, `"mop"`, `"wod"`, `"legion"`, `"bfa"`, `"shadowlands"`, `"dragonflight"`, `"tww"`)
+- `mapX` / `mapY` — coordenadas em pixels no arquivo `public/map.png`
+- `offWorld` — `true` para masmorras sem localização no mapa principal de Azeroth (ex: Argus, Draenor alternativo)
+
+Adicione também o arquivo `public/map.png` (mapa de Azeroth em alta resolução, disponível na WoW Wiki).
 
 ### Desenvolvimento
-
-Para rodar o servidor local com Hot Reload:
 
 ```bash
 npm run dev
 ```
 
+### Testes
+
+```bash
+npm test
+```
+
+### Build de produção
+
+```bash
+npm run build
+```
+
+---
+
+## 🗺️ Layout do Dashboard
+
+O dashboard é composto por quatro zonas:
+
+| Zona | Elemento | Função |
+|---|---|---|
+| Topo | Barra de filtros | Toggles de era, alternância de modo de visualização |
+| Centro-esquerda | Mapa do mundo | Nós de masmorras (tamanho = volume, cor = era), zoom/pan |
+| Centro-direita | Painel de detalhes | Visão de Era (Questão A) ou Reintrodução (Questão B) por masmorra |
+| Rodapé | Scrubber de temporadas | Navegar entre temporadas anima os nós no mapa |
+
 ---
 
 ## 📄 Licença
 
-Este projeto está licenciado sob a **Licença MIT** - consulte o arquivo [LICENSE](LICENSE) para detalhes. É uma licença permissiva que permite o uso acadêmico e comercial, modificação e distribuição, desde que mantidos os créditos originais.
-
----
-
-**Nota:** Este projeto possui fins estritamente educativos como parte dos requisitos das disciplinas de pós-graduação da UFF.
+MIT — uso acadêmico e educativo.

@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+docs/superpowers/plans
+CLAUDE.md
+.claude
+
