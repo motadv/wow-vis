@@ -28,11 +28,11 @@ export function renderEraView(
     .map(e => ({ era: e, avg: eraTotal.get(e)!.sum / eraTotal.get(e)!.count }))
     .sort((a, b) => b.avg - a.avg);
 
-  const width = container.clientWidth || 448;
-  const barH = 24;
-  const gap = 6;
-  const labelW = 104;
-  const margin = { top: 8, right: 56, bottom: 32, left: labelW };
+  const width = container.clientWidth || 548;
+  const barH = 32;
+  const gap = 8;
+  const labelW = 140;
+  const margin = { top: 8, right: 80, bottom: 44, left: labelW };
   const innerW = width - margin.left - margin.right;
   const barsH = bars.length * (barH + gap) - gap;
 
@@ -90,15 +90,15 @@ export function renderEraView(
     .attr('dy', '0.35em')
     .attr('text-anchor', 'end')
     .attr('fill', '#a1a1aa')
-    .attr('font-size', 12)
+    .attr('font-size', 14)
     .text(d => ERA_LABELS[d.era as keyof typeof ERA_LABELS] ?? d.era);
 
   barG.append('text')
-    .attr('x', d => xScale(d.avg) + 6)
+    .attr('x', d => xScale(d.avg) + 8)
     .attr('y', barH / 2)
     .attr('dy', '0.35em')
     .attr('fill', '#71717a')
-    .attr('font-size', 11)
+    .attr('font-size', 13)
     .text(d => `avg ${Math.round(d.avg)}`);
 
   // Selected dungeon's own value overlay
@@ -128,14 +128,14 @@ export function renderEraView(
   axisG.selectAll('.tick line').attr('stroke', '#3f3f46');
   axisG.selectAll<SVGTextElement, unknown>('.tick text')
     .attr('fill', '#52525b')
-    .attr('font-size', 10);
+    .attr('font-size', 13);
 
   // Axis label
   g.append('text')
     .attr('x', innerW / 2)
-    .attr('y', axisY + 28)
+    .attr('y', axisY + 32)
     .attr('text-anchor', 'middle')
     .attr('fill', '#52525b')
-    .attr('font-size', 10)
+    .attr('font-size', 13)
     .text('Avg completions');
 }

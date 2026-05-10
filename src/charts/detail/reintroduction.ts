@@ -45,9 +45,9 @@ export function renderReintroductionView(
   });
   container.appendChild(wrap);
 
-  const panelW = (container.clientWidth || 448) - 32;
-  const chartH = 90;
-  const margin = { top: 4, right: 4, bottom: 28, left: 4 };
+  const panelW = (container.clientWidth || 548) - 32;
+  const chartH = 120;
+  const margin = { top: 4, right: 4, bottom: 38, left: 4 };
   const innerW = panelW - margin.left - margin.right;
   const innerH = chartH - margin.top - margin.bottom;
 
@@ -66,11 +66,11 @@ export function renderReintroductionView(
     });
 
     const typeLabel = document.createElement('span');
-    Object.assign(typeLabel.style, { fontSize: '11px', fontWeight: '600', color });
+    Object.assign(typeLabel.style, { fontSize: '15px', fontWeight: '600', color });
     typeLabel.textContent = snap.isFirstAppearance ? 'First Appearance' : 'Reintroduction';
 
     const statsLabel = document.createElement('span');
-    Object.assign(statsLabel.style, { fontSize: '10px', color: '#71717a' });
+    Object.assign(statsLabel.style, { fontSize: '13px', color: '#71717a' });
     statsLabel.textContent = `max ${snap.maxKey} · n=${snap.entryCount}`;
 
     headerRow.appendChild(typeLabel);
@@ -79,7 +79,7 @@ export function renderReintroductionView(
 
     // Season name subline
     const seasonSpan = document.createElement('span');
-    Object.assign(seasonSpan.style, { fontSize: '10px', color: '#71717a' });
+    Object.assign(seasonSpan.style, { fontSize: '13px', color: '#71717a' });
     seasonSpan.textContent = snap.seasonName;
     cell.appendChild(seasonSpan);
 
@@ -131,15 +131,15 @@ export function renderReintroductionView(
     axisG.selectAll('.tick line').attr('stroke', '#3f3f46');
     axisG.selectAll<SVGTextElement, unknown>('.tick text')
       .attr('fill', '#52525b')
-      .attr('font-size', 9);
+      .attr('font-size', 13);
 
     // Axis label
     g.append('text')
       .attr('x', innerW / 2)
-      .attr('y', innerH + 24)
+      .attr('y', innerH + 32)
       .attr('text-anchor', 'middle')
       .attr('fill', '#52525b')
-      .attr('font-size', 10)
+      .attr('font-size', 13)
       .text('Key level');
 
     wrap.appendChild(cell);

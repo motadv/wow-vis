@@ -96,7 +96,7 @@ export function initDetail(container: HTMLElement, manifest: DungeonManifest): v
     Object.assign(description.style, {
       margin: '0',
       padding: '10px 16px',
-      fontSize: '11px',
+      fontSize: '15px',
       lineHeight: '1.5',
       color: '#71717a',
       borderBottom: '1px solid #27272a',
