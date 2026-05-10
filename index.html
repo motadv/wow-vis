@@ -4,12 +4,28 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>wow-vis</title>
+    <title>WoW Mythic+ Dungeon Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/style.css" />
   </head>
-  <body>
-    <div id="app">
-      <div id="vis"></div>
+  <body class="h-screen bg-gray-950 overflow-hidden">
+    <div class="flex flex-col h-full">
+      <!-- Filters Bar -->
+      <div id="filters" class="h-12 bg-zinc-900 border-b border-zinc-800 flex items-center px-4"></div>
+
+      <!-- Main Content Area -->
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Map Container -->
+        <div id="map" class="flex-1 bg-zinc-900 border-r border-zinc-800"></div>
+
+        <!-- Detail Panel (hidden by default) -->
+        <div id="detail" class="hidden w-96 bg-zinc-800 border-l border-zinc-700 overflow-y-auto"></div>
+      </div>
+
+      <!-- Scrubber Bar -->
+      <div id="scrubber" class="h-14 bg-zinc-900 border-t border-zinc-800 flex items-center px-4"></div>
     </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
