@@ -2,8 +2,8 @@ import type { Era } from './types';
 
 export const MAP_WIDTH = 2048;
 export const MAP_HEIGHT = 1400;
-export const OFF_WORLD_X = 120;
-export const OFF_WORLD_Y = 700;
+export const OFF_WORLD_X = 1900;
+export const OFF_WORLD_Y = 900;
 
 export const ERA_PALETTE: Record<Era, string> = {
   vanilla:      '#C79C6E',
