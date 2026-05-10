@@ -30,6 +30,7 @@ html, body {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 #map {
@@ -39,16 +40,23 @@ html, body {
 }
 
 #detail {
-  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 384px;
-  flex-shrink: 0;
   overflow-y: auto;
   background: #18181b;
   border-left: 1px solid #27272a;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  pointer-events: none;
+  z-index: 10;
 }
 
 #detail.open {
-  display: block;
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
 #scrubber {
