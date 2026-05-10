@@ -24,6 +24,13 @@ VITE_BLIZZARD_CLIENT_SECRET=...
 
 Vite exposes these as `import.meta.env.VITE_*` in the browser bundle. The fetch script reads them from `process.env`.
 
+## Blizzard API Notes
+
+- Season detail (`/mythic-keystone/season/{id}`) has no dungeon list — fetch `/connected-realm/{id}/mythic-leaderboard/index` per realm to get current-season dungeon IDs.
+- Dungeon identifier in leaderboard responses is `map_challenge_mode_id`, not `id`.
+- Real API response samples are saved in `docs/api-samples/` — use as reference when writing types.
+- Connected realm 11 = Tichondrius/Illidan cluster (high-population US; used for leaderboard sampling).
+
 ## Architecture
 
 Two distinct runtimes — an offline data pipeline and an in-browser viz — share no server.
@@ -49,7 +56,7 @@ The dashboard has four layout zones (`#filters`, `#map`, `#detail`, `#scrubber`)
 
 ### TypeScript configs
 
-Two separate configs: `tsconfig.json` (browser, `moduleResolution: bundler`, `noEmit: true`) and `scripts/tsconfig.json` (Node.js, `moduleResolution: node16`, emit enabled). Type-check both when touching shared interfaces.
+Two separate configs: `tsconfig.json` (browser, `moduleResolution: bundler`, `noEmit: true`) and `scripts/tsconfig.json` (Node.js, `moduleResolution: node16`, emit enabled). Type-check both when touching shared interfaces. `tsc --project scripts/tsconfig.json` will report "No inputs found" until `.ts` files exist in `scripts/` — expected, not a config error.
 
 ## TypeScript
 

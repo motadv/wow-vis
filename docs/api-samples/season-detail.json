@@ -1,0 +1,60 @@
+{
+  "_links": {
+    "self": {
+      "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/season/17?namespace=dynamic-us"
+    }
+  },
+  "id": 17,
+  "start_timestamp": 1773759600000,
+  "periods": [
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/period/1055?namespace=dynamic-us"
+      },
+      "id": 1055
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/period/1056?namespace=dynamic-us"
+      },
+      "id": 1056
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/period/1057?namespace=dynamic-us"
+      },
+      "id": 1057
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/period/1058?namespace=dynamic-us"
+      },
+      "id": 1058
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/period/1059?namespace=dynamic-us"
+      },
+      "id": 1059
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/period/1060?namespace=dynamic-us"
+      },
+      "id": 1060
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/period/1061?namespace=dynamic-us"
+      },
+      "id": 1061
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/period/1062?namespace=dynamic-us"
+      },
+      "id": 1062
+    }
+  ],
+  "season_name": "Mythic+ Dungeons (Midnight Season 1)"
+}

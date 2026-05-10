@@ -1,0 +1,38 @@
+{
+  "_links": {
+    "self": {
+      "href": "https://us.api.blizzard.com/data/wow/mythic-keystone/dungeon/56?namespace=dynamic-us"
+    }
+  },
+  "id": 56,
+  "name": "Stormstout Brewery",
+  "map": {
+    "name": "Stormstout Brewery",
+    "id": 961
+  },
+  "zone": {
+    "slug": "stormstout-brewery"
+  },
+  "dungeon": {
+    "key": {
+      "href": "https://us.api.blizzard.com/data/wow/journal-instance/302?namespace=static-12.0.5_66741-us"
+    },
+    "name": "Stormstout Brewery",
+    "id": 302
+  },
+  "keystone_upgrades": [
+    {
+      "upgrade_level": 1,
+      "qualifying_duration": 2700000
+    },
+    {
+      "upgrade_level": 2,
+      "qualifying_duration": 1260000
+    },
+    {
+      "upgrade_level": 3,
+      "qualifying_duration": 720000
+    }
+  ],
+  "is_tracked": false
+}

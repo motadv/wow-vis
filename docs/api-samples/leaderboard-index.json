@@ -1,0 +1,65 @@
+{
+  "_links": {
+    "self": {
+      "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/?namespace=dynamic-us"
+    }
+  },
+  "current_leaderboards": [
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/161/period/1062?namespace=dynamic-us"
+      },
+      "name": "Skyreach",
+      "id": 161
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/239/period/1062?namespace=dynamic-us"
+      },
+      "name": "Seat of the Triumvirate",
+      "id": 239
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/402/period/1062?namespace=dynamic-us"
+      },
+      "name": "Algeth'ar Academy",
+      "id": 402
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/556/period/1062?namespace=dynamic-us"
+      },
+      "name": "Pit of Saron",
+      "id": 556
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/557/period/1062?namespace=dynamic-us"
+      },
+      "name": "Windrunner Spire",
+      "id": 557
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/558/period/1062?namespace=dynamic-us"
+      },
+      "name": "Magisters' Terrace",
+      "id": 558
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/559/period/1062?namespace=dynamic-us"
+      },
+      "name": "Nexus-Point Xenas",
+      "id": 559
+    },
+    {
+      "key": {
+        "href": "https://us.api.blizzard.com/data/wow/connected-realm/11/mythic-leaderboard/560/period/1062?namespace=dynamic-us"
+      },
+      "name": "Maisara Caverns",
+      "id": 560
+    }
+  ]
+}
