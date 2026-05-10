@@ -28,16 +28,18 @@ export function renderEraView(
     .map(e => ({ era: e, avg: eraTotal.get(e)!.sum / eraTotal.get(e)!.count }))
     .sort((a, b) => b.avg - a.avg);
 
-  const width = container.clientWidth || 340;
+  const width = container.clientWidth || 448;
   const barH = 24;
   const gap = 6;
-  const labelW = 96;
-  const margin = { top: 8, right: 16, bottom: 8, left: labelW };
-  const height = bars.length * (barH + gap) + margin.top + margin.bottom;
+  const labelW = 104;
+  const margin = { top: 8, right: 56, bottom: 32, left: labelW };
+  const innerW = width - margin.left - margin.right;
+  const barsH = bars.length * (barH + gap) - gap;
+  const height = barsH + margin.top + margin.bottom;
 
   const xScale = d3.scaleLinear()
     .domain([0, d3.max(bars, d => d.avg) ?? 1])
-    .range([0, width - margin.left - margin.right]);
+    .range([0, innerW]);
 
   const svg = d3.select(container)
     .append('svg')
@@ -45,6 +47,20 @@ export function renderEraView(
     .attr('height', height);
 
   const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  // Vertical gridlines behind bars
+  const tickVals = xScale.ticks(4);
+  g.selectAll<SVGLineElement, number>('line.grid')
+    .data(tickVals)
+    .enter()
+    .append('line')
+    .attr('class', 'grid')
+    .attr('x1', d => xScale(d))
+    .attr('x2', d => xScale(d))
+    .attr('y1', 0)
+    .attr('y2', barsH)
+    .attr('stroke', '#27272a')
+    .attr('stroke-width', 0.5);
 
   const barG = g.selectAll<SVGGElement, EraBar>('g.bar')
     .data(bars)
@@ -77,6 +93,7 @@ export function renderEraView(
     .attr('font-size', 11)
     .text(d => `avg ${Math.round(d.avg)}`);
 
+  // Selected dungeon's own value overlay
   if (thisVolume) {
     const thisBar = bars.find(b => b.era === dungeon.era);
     if (thisBar) {
@@ -86,7 +103,31 @@ export function renderEraView(
         .attr('height', barH)
         .attr('rx', 3)
         .attr('fill', '#ffffff')
-        .attr('opacity', 0.18);
+        .attr('opacity', 0.28);
     }
   }
+
+  // X-axis
+  const xAxis = d3.axisBottom(xScale)
+    .ticks(4)
+    .tickFormat(d => d3.format('~s')(d as number));
+
+  const axisG = g.append('g')
+    .attr('transform', `translate(0,${barsH})`)
+    .call(xAxis);
+
+  axisG.select('.domain').attr('stroke', '#3f3f46');
+  axisG.selectAll('.tick line').attr('stroke', '#3f3f46');
+  axisG.selectAll<SVGTextElement, unknown>('.tick text')
+    .attr('fill', '#52525b')
+    .attr('font-size', 10);
+
+  // Axis label
+  g.append('text')
+    .attr('x', innerW / 2)
+    .attr('y', barsH + 28)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#52525b')
+    .attr('font-size', 10)
+    .text('Avg completions');
 }
