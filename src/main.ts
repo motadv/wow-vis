@@ -1,3 +1,3 @@
 import initViz from './charts/init';
 
-initViz();
+await initViz();
