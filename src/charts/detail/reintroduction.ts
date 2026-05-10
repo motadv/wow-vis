@@ -36,54 +36,111 @@ export function renderReintroductionView(
   const allLevels = snapshots.flatMap(s => s.distribution.map(r => r.keystone_level));
   const xDomain: [number, number] = [d3.min(allLevels) ?? 0, d3.max(allLevels) ?? 1];
 
-  const chartWidth = 140;
-  const chartHeight = 80;
-  const xPad = 8;
-
   const wrap = document.createElement('div');
-  Object.assign(wrap.style, { display: 'flex', flexWrap: 'wrap', gap: '16px', padding: '12px 16px' });
+  Object.assign(wrap.style, {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    padding: '12px 16px',
+  });
   container.appendChild(wrap);
+
+  const panelW = (container.clientWidth || 448) - 32;
+  const chartH = 90;
+  const margin = { top: 4, right: 4, bottom: 28, left: 4 };
+  const innerW = panelW - margin.left - margin.right;
+  const innerH = chartH - margin.top - margin.bottom;
 
   for (const snap of snapshots) {
     const cell = document.createElement('div');
-    Object.assign(cell.style, { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' });
+    Object.assign(cell.style, { display: 'flex', flexDirection: 'column', gap: '2px' });
 
     const color = snap.isFirstAppearance ? '#60A5FA' : '#A78BFA';
 
-    const label = document.createElement('span');
-    Object.assign(label.style, { fontSize: '11px', fontWeight: '600', color });
-    label.textContent = snap.isFirstAppearance ? 'First Appearance' : 'Reintroduction';
-    cell.appendChild(label);
+    // Header row: type label left, stats right
+    const headerRow = document.createElement('div');
+    Object.assign(headerRow.style, {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+    });
 
+    const typeLabel = document.createElement('span');
+    Object.assign(typeLabel.style, { fontSize: '11px', fontWeight: '600', color });
+    typeLabel.textContent = snap.isFirstAppearance ? 'First Appearance' : 'Reintroduction';
+
+    const statsLabel = document.createElement('span');
+    Object.assign(statsLabel.style, { fontSize: '10px', color: '#71717a' });
+    statsLabel.textContent = `max ${snap.maxKey} · n=${snap.entryCount}`;
+
+    headerRow.appendChild(typeLabel);
+    headerRow.appendChild(statsLabel);
+    cell.appendChild(headerRow);
+
+    // Season name subline
     const seasonSpan = document.createElement('span');
     Object.assign(seasonSpan.style, { fontSize: '10px', color: '#71717a' });
     seasonSpan.textContent = snap.seasonName;
     cell.appendChild(seasonSpan);
 
-    const xScale = d3.scaleLinear().domain(xDomain).range([xPad, chartWidth - xPad]);
+    // SVG histogram
+    const xScale = d3.scaleLinear().domain(xDomain).range([0, innerW]);
     const yMax = d3.max(snap.distribution, r => r.count) ?? 1;
-    const yScale = d3.scaleLinear().domain([0, yMax]).range([chartHeight, 0]);
-    const barW = Math.max(2, (chartWidth - xPad * 2) / Math.max(1, snap.distribution.length) - 1);
+    const yScale = d3.scaleLinear().domain([0, yMax]).range([innerH, 0]);
+    const barW = Math.max(2, innerW / Math.max(1, snap.distribution.length) - 1);
 
-    const svg = d3.select(cell).append('svg')
-      .attr('width', chartWidth)
-      .attr('height', chartHeight);
+    const svgH = margin.top + innerH + margin.bottom;
+    const svg = d3.select(cell)
+      .append('svg')
+      .attr('width', panelW)
+      .attr('height', svgH);
 
-    svg.selectAll<SVGRectElement, KeyDistRow>('rect')
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Horizontal gridlines at 25%, 50%, 75% of innerH (drawn behind bars)
+    [0.25, 0.5, 0.75].forEach(frac => {
+      g.append('line')
+        .attr('x1', 0).attr('x2', innerW)
+        .attr('y1', innerH * (1 - frac)).attr('y2', innerH * (1 - frac))
+        .attr('stroke', '#3f3f46')
+        .attr('stroke-width', 0.5);
+    });
+
+    // Bars
+    g.selectAll<SVGRectElement, KeyDistRow>('rect')
       .data(snap.distribution)
       .enter()
       .append('rect')
       .attr('x', d => xScale(d.keystone_level) - barW / 2)
       .attr('y', d => yScale(d.count))
       .attr('width', barW)
-      .attr('height', d => chartHeight - yScale(d.count))
+      .attr('height', d => innerH - yScale(d.count))
       .attr('fill', color)
       .attr('opacity', 0.8);
 
-    const caption = document.createElement('span');
-    Object.assign(caption.style, { fontSize: '10px', color: '#71717a' });
-    caption.textContent = `max ${snap.maxKey} · n=${snap.entryCount}`;
-    cell.appendChild(caption);
+    // X-axis
+    const xAxis = d3.axisBottom(xScale)
+      .ticks(5)
+      .tickFormat(d => String(Math.round(d as number)));
+
+    const axisG = g.append('g')
+      .attr('transform', `translate(0,${innerH})`)
+      .call(xAxis);
+
+    axisG.select('.domain').remove();
+    axisG.selectAll('.tick line').attr('stroke', '#3f3f46');
+    axisG.selectAll<SVGTextElement, unknown>('.tick text')
+      .attr('fill', '#52525b')
+      .attr('font-size', 9);
+
+    // Axis label
+    g.append('text')
+      .attr('x', innerW / 2)
+      .attr('y', innerH + 24)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#52525b')
+      .attr('font-size', 10)
+      .text('Key level');
 
     wrap.appendChild(cell);
   }
