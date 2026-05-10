@@ -6,12 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fetch": "tsx scripts/fetch/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",
+    "@types/node": "^22.0.0",
+    "duckdb": "^1.2.2",
+    "tsx": "^4.19.4",
     "typescript": "~6.0.2",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vitest": "^3.2.3"
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.33.1-dev45.0",
