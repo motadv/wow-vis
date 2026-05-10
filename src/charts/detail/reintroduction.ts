@@ -47,7 +47,7 @@ export function renderReintroductionView(
 
   const panelW = (container.clientWidth || 548) - 32;
   const chartH = 120;
-  const margin = { top: 4, right: 4, bottom: 38, left: 4 };
+  const margin = { top: 4, right: 15, bottom: 38, left: 15 };
   const innerW = panelW - margin.left - margin.right;
   const innerH = chartH - margin.top - margin.bottom;
 
