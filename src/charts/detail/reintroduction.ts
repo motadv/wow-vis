@@ -41,13 +41,14 @@ export function renderReintroductionView(
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
-    padding: '12px 16px',
+    padding: '12px 0',
+    margin: '0 15px',
   });
   container.appendChild(wrap);
 
-  const panelW = (container.clientWidth || 548) - 32;
+  const panelW = (container.clientWidth || 548) - 30;
   const chartH = 120;
-  const margin = { top: 4, right: 15, bottom: 38, left: 15 };
+  const margin = { top: 4, right: 8, bottom: 38, left: 8 };
   const innerW = panelW - margin.left - margin.right;
   const innerH = chartH - margin.top - margin.bottom;
 
