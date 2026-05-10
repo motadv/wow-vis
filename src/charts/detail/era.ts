@@ -41,7 +41,7 @@ export function renderEraView(
     .range([0, innerW]);
 
   const axisY = barsH + 8;
-  const height = axisY + margin.bottom;
+  const height = margin.top + axisY + margin.bottom;
 
   const svg = d3.select(container)
     .append('svg')
