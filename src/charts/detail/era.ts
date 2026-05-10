@@ -35,11 +35,13 @@ export function renderEraView(
   const margin = { top: 8, right: 56, bottom: 32, left: labelW };
   const innerW = width - margin.left - margin.right;
   const barsH = bars.length * (barH + gap) - gap;
-  const height = barsH + margin.top + margin.bottom;
 
   const xScale = d3.scaleLinear()
     .domain([0, d3.max(bars, d => d.avg) ?? 1])
     .range([0, innerW]);
+
+  const axisY = barsH + 8;
+  const height = axisY + margin.bottom;
 
   const svg = d3.select(container)
     .append('svg')
@@ -48,7 +50,7 @@ export function renderEraView(
 
   const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-  // Vertical gridlines behind bars
+  // Vertical gridlines — drawn first (behind everything)
   const tickVals = xScale.ticks(4);
   g.selectAll<SVGLineElement, number>('line.grid')
     .data(tickVals)
@@ -59,8 +61,8 @@ export function renderEraView(
     .attr('x2', d => xScale(d))
     .attr('y1', 0)
     .attr('y2', barsH)
-    .attr('stroke', '#27272a')
-    .attr('stroke-width', 0.5);
+    .attr('stroke', '#3f3f46')
+    .attr('stroke-width', 1);
 
   const barG = g.selectAll<SVGGElement, EraBar>('g.bar')
     .data(bars)
@@ -68,6 +70,12 @@ export function renderEraView(
     .append('g')
     .attr('class', 'bar')
     .attr('transform', (_, i) => `translate(0,${i * (barH + gap)})`);
+
+  // Background rect masks gridlines inside each bar's row
+  barG.append('rect')
+    .attr('width', innerW)
+    .attr('height', barH)
+    .attr('fill', '#18181b');
 
   barG.append('rect')
     .attr('width', d => xScale(d.avg))
@@ -113,7 +121,7 @@ export function renderEraView(
     .tickFormat(d => d3.format('~s')(d as number));
 
   const axisG = g.append('g')
-    .attr('transform', `translate(0,${barsH})`)
+    .attr('transform', `translate(0,${axisY})`)
     .call(xAxis);
 
   axisG.select('.domain').attr('stroke', '#3f3f46');
@@ -125,7 +133,7 @@ export function renderEraView(
   // Axis label
   g.append('text')
     .attr('x', innerW / 2)
-    .attr('y', barsH + 28)
+    .attr('y', axisY + 28)
     .attr('text-anchor', 'middle')
     .attr('fill', '#52525b')
     .attr('font-size', 10)
