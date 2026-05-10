@@ -6,7 +6,7 @@
 
 **Architecture:** An offline Node.js fetch script pulls Blizzard Mythic+ leaderboard data for a sample of connected realms, writes per-season Parquet files and a `dungeons.json` manifest to `public/data/`. At runtime, DuckDB-Wasm loads these files on demand and executes aggregation queries; D3.js renders a zoomable world map with dungeon nodes, a season scrubber, a filter bar, and a detail panel with Era and Reintroduction views.
 
-**Tech Stack:** Vite + TypeScript, D3.js v7, @duckdb/duckdb-wasm, Tailwind CSS (CDN), Node.js 18+ with native `duckdb` and `tsx` for the offline script, Vitest for unit tests.
+**Tech Stack:** Vite + TypeScript, D3.js v7, @duckdb/duckdb-wasm, plain CSS (no framework — Tailwind CDN is incompatible with `Cross-Origin-Embedder-Policy: require-corp`), Node.js 18+ with native `duckdb` and `tsx` for the offline script, Vitest for unit tests.
 
 ---
 
@@ -83,7 +83,7 @@
 
 **Files:** `index.html`, `src/style.css`, `src/main.ts`
 
-- [ ] Replace `index.html` body with four-zone dark layout using Tailwind CDN: `#filters` bar at top, `#map` + `#detail` (hidden by default) in middle, `#scrubber` at bottom
+- [x] Replace `index.html` body with four-zone dark layout using plain CSS: `#filters` bar at top, `#map` + `#detail` (hidden by default, revealed via `.open` class) in middle, `#scrubber` at bottom
 - [ ] Strip `src/style.css` to a minimal box-sizing reset
 - [ ] Replace `src/main.ts` with a single `initViz()` call (stub import — will be implemented in Task 13)
 - [ ] Run `npm run dev` and confirm dark empty layout renders without errors; commit

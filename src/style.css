@@ -1,1 +1,63 @@
 *, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #09090b;
+  color: #e4e4e7;
+}
+
+#layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#filters {
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  background: #18181b;
+  border-bottom: 1px solid #27272a;
+}
+
+#middle {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+#map {
+  flex: 1;
+  overflow: hidden;
+  background: #09090b;
+}
+
+#detail {
+  display: none;
+  width: 384px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: #18181b;
+  border-left: 1px solid #27272a;
+}
+
+#detail.open {
+  display: block;
+}
+
+#scrubber {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  background: #18181b;
+  border-top: 1px solid #27272a;
+}

@@ -36,7 +36,7 @@ A API pública da Blizzard expõe apenas o **topo do leaderboard por reino conec
 - **[Vite](https://vitejs.dev/)** + **[TypeScript](https://www.typescriptlang.org/):** Build e tipagem estática.
 - **[D3.js](https://d3js.org/):** Visualizações interativas em SVG.
 - **[DuckDB-Wasm](https://duckdb.org/docs/api/wasm/overview):** OLAP in-browser via WebAssembly para queries sobre os dados de Parquet.
-- **[Tailwind CSS](https://tailwindcss.com/):** Estilização via CDN.
+- **Plain CSS:** Estilização sem framework.
 - **Node.js + [tsx](https://github.com/privatenumber/tsx) + [duckdb](https://www.npmjs.com/package/duckdb):** Script offline para coleta e conversão dos dados da API.
 - **[Vitest](https://vitest.dev/):** Testes unitários para o pipeline de dados.
 

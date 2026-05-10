@@ -136,5 +136,5 @@ This is optional and should be implemented only after the core A+B system is sta
 | Map & charts | D3.js (SVG) |
 | In-browser OLAP | DuckDB-Wasm |
 | Data format | Parquet (seasons) + JSON (dungeon manifest) |
-| Styling | Tailwind CSS |
+| Styling | Plain CSS |
 | Data collection | Node.js pre-fetch script (Blizzard OAuth) |
