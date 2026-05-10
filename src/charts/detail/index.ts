@@ -92,6 +92,20 @@ export function initDetail(container: HTMLElement, manifest: DungeonManifest): v
 
     container.appendChild(toggle);
 
+    const description = document.createElement('p');
+    Object.assign(description.style, {
+      margin: '0',
+      padding: '10px 16px',
+      fontSize: '11px',
+      lineHeight: '1.5',
+      color: '#71717a',
+      borderBottom: '1px solid #27272a',
+    });
+    description.textContent = viewMode === 'era'
+      ? `Each bar is the average number of high-end completions across all dungeons from that expansion. The white mark on the highlighted bar shows where ${dungeon.name} sits relative to its era's average.`
+      : 'Key level distributions across every season this dungeon appeared. Blue panels mark its first entry into the pool; purple panels are return appearances. All panels share the same x-axis so distributions are directly comparable.';
+    container.appendChild(description);
+
     const chartArea = document.createElement('div');
     chartArea.style.padding = '16px 0';
     container.appendChild(chartArea);
