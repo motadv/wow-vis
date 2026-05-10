@@ -52,19 +52,26 @@ Fully static — no backend. Data flow:
 3. **`src/state.ts`** — minimal pub/sub state: `selectedSeason`, `selectedDungeon`, `viewMode`, `filterEras`. All chart modules subscribe to this.
 4. **`src/charts/`** — D3.js chart modules. Each exports an `init*` function. `charts/init.ts` orchestrates the full startup sequence: load manifest → init all charts → subscribe to state changes.
 
-The dashboard has four layout zones (`#filters`, `#map`, `#detail`, `#scrubber`) defined in `index.html`. Layout and styling use plain CSS in `src/style.css` — no CSS framework. Tailwind was dropped because `Cross-Origin-Embedder-Policy: require-corp` (required for DuckDB-Wasm SharedArrayBuffer) blocks external CDN scripts that lack a `Cross-Origin-Resource-Policy` header.
+The dashboard has four layout zones (`#filters`, `#map`, `#detail`, `#scrubber`) defined in `index.html`, styled with plain CSS (`src/style.css`). `#detail` is hidden by default; show it by adding the `.open` class.
 
 ### TypeScript configs
 
-Two separate configs: `tsconfig.json` (browser, `moduleResolution: bundler`, `noEmit: true`) and `scripts/tsconfig.json` (Node.js, `moduleResolution: node16`, emit enabled). Type-check both when touching shared interfaces. `tsc --project scripts/tsconfig.json` will report "No inputs found" until `.ts` files exist in `scripts/` — expected, not a config error.
+Two separate configs: `tsconfig.json` (browser) and `scripts/tsconfig.json` (Node.js). Type-check both when touching shared interfaces:
+
+```bash
+npx tsc --noEmit                                    # browser
+npx tsc --project scripts/tsconfig.json --noEmit   # pipeline
+```
 
 ## TypeScript
 
 Strict settings: `noUnusedLocals`, `noUnusedParameters`. No `any` assertions without justification. `Era` type and `DungeonManifest` shape are defined separately in `scripts/fetch/types.ts` and `src/types.ts` — keep them in sync.
 
-## Planning
+## D3 Chart Gotchas
 
-When writing implementation plans, describe steps at a high level — what files to create, what functions/interfaces each contains, and what each step accomplishes. Do not include full code file contents in plan documents; leave actual code for implementation time.
+- **SVG height**: always compute as `margin.top + innerH + margin.bottom` — forgetting `margin.top` clips bottom axis labels.
+- **SVG width vs CSS padding**: computing `panelW = clientWidth - padding*2` makes the SVG flush against the content edge; no visible gap appears. Use CSS `margin` on the wrapper div for reliable visual spacing instead.
+- **Gridlines through semi-transparent bars**: bars with `opacity < 1` let gridlines show through. Append a full-width background rect (panel bg color) per bar before the colored bar to mask the gridline in that row.
 
 ## Commits
 

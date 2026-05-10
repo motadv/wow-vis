@@ -52,6 +52,7 @@ A API pública da Blizzard expõe apenas o **topo do leaderboard por reino conec
 │       └── season-N.parquet     # Dados de leaderboard por temporada (gerado pelo script)
 ├── scripts/
 │   └── fetch/                   # Script offline de coleta da API Blizzard
+│       ├── types.ts             # Tipos do pipeline e shapes brutos da API Blizzard
 │       ├── auth.ts              # OAuth client credentials
 │       ├── blizzard.ts          # Wrappers para endpoints da API
 │       ├── transform.ts         # Transformação dos dados brutos
@@ -112,7 +113,7 @@ npm run fetch
 Este script autentica na API da Blizzard, busca os dados de leaderboard de Mythic+ para todas as temporadas completas (amostrando reinos de alta população nos EUA) e grava os resultados em `public/data/`.
 
 Após a execução, edite manualmente `public/data/dungeons.json` e preencha para cada masmorra:
-- `era` — era de origem (`"vanilla"`, `"tbc"`, `"wotlk"`, `"cata"`, `"mop"`, `"wod"`, `"legion"`, `"bfa"`, `"shadowlands"`, `"dragonflight"`, `"tww"`)
+- `era` — era de origem (`"vanilla"`, `"tbc"`, `"wotlk"`, `"cataclysm"`, `"mop"`, `"wod"`, `"legion"`, `"bfa"`, `"shadowlands"`, `"dragonflight"`, `"tww"`, `"midnight"`)
 - `mapX` / `mapY` — coordenadas em pixels no arquivo `public/map.png`
 - `offWorld` — `true` para masmorras sem localização no mapa principal de Azeroth (ex: Argus, Draenor alternativo)
 

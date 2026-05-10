@@ -6,7 +6,7 @@
 
 **Architecture:** An offline Node.js fetch script pulls Blizzard Mythic+ leaderboard data for a sample of connected realms, writes per-season Parquet files and a `dungeons.json` manifest to `public/data/`. At runtime, DuckDB-Wasm loads these files on demand and executes aggregation queries; D3.js renders a zoomable world map with dungeon nodes, a season scrubber, a filter bar, and a detail panel with Era and Reintroduction views.
 
-**Tech Stack:** Vite + TypeScript, D3.js v7, @duckdb/duckdb-wasm, plain CSS (no framework — Tailwind CDN is incompatible with `Cross-Origin-Embedder-Policy: require-corp`), Node.js 18+ with native `duckdb` and `tsx` for the offline script, Vitest for unit tests.
+**Tech Stack:** Vite + TypeScript, D3.js v7, @duckdb/duckdb-wasm, plain CSS, Node.js 18+ with native `duckdb` and `tsx` for the offline script, Vitest for unit tests.
 
 ---
 
@@ -73,9 +73,9 @@
 
 **Files:** `scripts/fetch/types.ts`, `src/types.ts`
 
-- [ ] Create `scripts/fetch/types.ts` with pipeline types: `Era` union, `DungeonMeta`, `SeasonMeta`, `DungeonManifest`, `LeaderboardEntry` (snake_case fields to match Parquet column names), and raw Blizzard API shapes (`BlizzardSeason`, `BlizzardLeaderboard`, `BlizzardLeaderboardGroup`)
-- [ ] Create `src/types.ts` with viz types: same `Era`/`DungeonMeta`/`SeasonMeta`/`DungeonManifest`, plus `VolumeRow`, `KeyDistRow`, `CrossSeasonRow`, `AppState` (`selectedSeason`, `selectedDungeon`, `viewMode`, `filterEras`)
-- [ ] Type-check both configs; commit
+- [x] Create `scripts/fetch/types.ts` with pipeline types: `Era` union, `DungeonMeta`, `SeasonMeta`, `DungeonManifest`, `LeaderboardEntry` (snake_case fields to match Parquet column names), and raw Blizzard API shapes (`BlizzardSeason`, `BlizzardLeaderboard`, `BlizzardLeaderboardGroup`)
+- [x] Create `src/types.ts` with viz types: same `Era`/`DungeonMeta`/`SeasonMeta`/`DungeonManifest`, plus `VolumeRow`, `KeyDistRow`, `CrossSeasonRow`, `AppState` (`selectedSeason`, `selectedDungeon`, `viewMode`, `filterEras`)
+- [x] Type-check both configs; commit
 
 ---
 
@@ -84,9 +84,9 @@
 **Files:** `index.html`, `src/style.css`, `src/main.ts`
 
 - [x] Replace `index.html` body with four-zone dark layout using plain CSS: `#filters` bar at top, `#map` + `#detail` (hidden by default, revealed via `.open` class) in middle, `#scrubber` at bottom
-- [ ] Strip `src/style.css` to a minimal box-sizing reset
-- [ ] Replace `src/main.ts` with a single `initViz()` call (stub import — will be implemented in Task 13)
-- [ ] Run `npm run dev` and confirm dark empty layout renders without errors; commit
+- [x] Strip `src/style.css` to a minimal box-sizing reset
+- [x] Replace `src/main.ts` with a single `initViz()` call (stub import — will be implemented in Task 13)
+- [x] Run `npm run dev` and confirm dark empty layout renders without errors; commit
 
 ---
 
@@ -94,10 +94,10 @@
 
 **Files:** `scripts/fetch/auth.ts`, `scripts/fetch/auth.test.ts`
 
-- [ ] Write failing tests first: mock `fetch` globally with `vi.stubGlobal`; test that `fetchToken` returns the `access_token` on success and throws with the status code on a non-ok response
-- [ ] Run tests — confirm they fail
-- [ ] Implement `fetchToken(clientId, clientSecret)`: base64-encode credentials, POST to `https://oauth.battle.net/token` with `grant_type=client_credentials`, return `access_token`
-- [ ] Run tests — confirm they pass; commit
+- [x] Write failing tests first: mock `fetch` globally with `vi.stubGlobal`; test that `fetchToken` returns the `access_token` on success and throws with the status code on a non-ok response
+- [x] Run tests — confirm they fail
+- [x] Implement `fetchToken(clientId, clientSecret)`: base64-encode credentials, POST to `https://oauth.battle.net/token` with `grant_type=client_credentials`, return `access_token`
+- [x] Run tests — confirm they pass; commit
 
 ---
 
@@ -105,9 +105,9 @@
 
 **Files:** `scripts/fetch/blizzard.ts`
 
-- [ ] Implement a private `get<T>(path, token)` helper that prepends `https://us.api.blizzard.com`, appends `?namespace=dynamic-us&locale=en_US`, sets `Authorization: Bearer` header, and throws on non-ok responses
-- [ ] Implement `fetchSeasonIds`, `fetchSeason`, `fetchPeriodIds`, `fetchLeaderboard` as thin wrappers over `get<T>`
-- [ ] Type-check; commit (no unit tests — these wrappers are verified by the integration run in Task 7)
+- [x] Implement a private `get<T>(path, token)` helper that prepends `https://us.api.blizzard.com`, appends `?namespace=dynamic-us&locale=en_US`, sets `Authorization: Bearer` header, and throws on non-ok responses
+- [x] Implement `fetchSeasonIds`, `fetchSeason`, `fetchPeriodIds`, `fetchLeaderboard` as thin wrappers over `get<T>`
+- [x] Type-check; commit (no unit tests — these wrappers are verified by the integration run in Task 7)
 
 ---
 

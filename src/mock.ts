@@ -9,16 +9,16 @@ function makeDist(min: number, median: number, max: number, total: number): KeyD
   return rows;
 }
 
-// Coordinates are in 2048×1400 SVG viewBox space (map.webp scaled to fill it).
-// Eastern Kingdoms occupies roughly x=1200–1850, Northrend x=600–1150 (top strip).
+// Coordinates are in 2048×1400 SVG viewBox space (map.webp 1000×667 scaled to fill it, factor ≈2.05×/2.10×).
+// EK spans roughly x=1065–1450; Northrend spans roughly x=310–1230, y=0–290 (top strip).
 export const MOCK_MANIFEST: DungeonManifest = {
   dungeons: [
-    { id: 101, name: 'Deadmines',                era: 'vanilla',      mapX: 1430, mapY: 870,  offWorld: false },
-    { id: 102, name: 'Shadowfang Keep',           era: 'vanilla',      mapX: 1320, mapY: 530,  offWorld: false },
-    { id: 103, name: 'The Nexus',                 era: 'wotlk',        mapX: 680,  mapY: 185,  offWorld: false },
-    { id: 104, name: 'Halls of Stone',            era: 'wotlk',        mapX: 1070, mapY: 170,  offWorld: false },
-    { id: 105, name: 'Blackrock Caverns',         era: 'cataclysm',    mapX: 1460, mapY: 940,  offWorld: false },
-    { id: 106, name: 'Throne of the Tides',       era: 'cataclysm',    mapX: 1640, mapY: 960,  offWorld: false },
+    { id: 101, name: 'Deadmines',                era: 'vanilla',      mapX: 1150, mapY: 755,  offWorld: false },
+    { id: 102, name: 'Shadowfang Keep',           era: 'vanilla',      mapX: 1100, mapY: 450,  offWorld: false },
+    { id: 103, name: 'The Nexus',                 era: 'wotlk',        mapX: 440,  mapY: 190,  offWorld: false },
+    { id: 104, name: 'Halls of Stone',            era: 'wotlk',        mapX: 900,  mapY: 135,  offWorld: false },
+    { id: 105, name: 'Blackrock Caverns',         era: 'cataclysm',    mapX: 1220, mapY: 680,  offWorld: false },
+    { id: 106, name: 'Throne of the Tides',       era: 'cataclysm',    mapX: 1000, mapY: 900,  offWorld: false },
     { id: 107, name: 'Black Rook Hold',           era: 'legion',       mapX: 0,    mapY: 0,    offWorld: true  },
     { id: 108, name: 'Eye of Azshara',            era: 'legion',       mapX: 0,    mapY: 0,    offWorld: true  },
     { id: 109, name: 'Ruby Life Pools',           era: 'dragonflight', mapX: 0,    mapY: 0,    offWorld: true  },
