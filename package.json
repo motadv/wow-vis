@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "fetch": "tsx scripts/fetch/index.ts",
+    "fetch": "node --env-file=.env --import tsx/esm scripts/fetch/index.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

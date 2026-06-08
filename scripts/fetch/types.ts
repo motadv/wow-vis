@@ -56,7 +56,7 @@ export interface BlizzardSeason {
   id: number;
   start_timestamp: number;
   end_timestamp?: number;
-  season_name: string;
+  season_name: string | null;
   periods: BlizzardSeasonRef[];
 }
 

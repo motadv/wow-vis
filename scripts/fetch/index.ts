@@ -88,7 +88,7 @@ async function main() {
 
     const seasonMeta: SeasonMeta = {
       id: season.id,
-      name: season.season_name,
+      name: season.season_name ?? `Season ${seasonId}`,
       startTimestamp: season.start_timestamp,
       dungeonIds: activeDungeonIds,
     };
