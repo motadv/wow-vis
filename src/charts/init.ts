@@ -1,5 +1,5 @@
 import { MOCK_MANIFEST, MOCK_VOLUME } from '../mock';
-import { setState, subscribe } from '../state';
+import { getState, setState, subscribe } from '../state';
 import { initMap, updateVolume } from './map';
 import { initScrubber } from './scrubber';
 import { initDetail, setAllVolume } from './detail/index';
@@ -19,4 +19,10 @@ export default async function initViz(): Promise<void> {
   });
 
   setState({ selectedSeason: firstSeason.id });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && getState().selectedDungeon !== null) {
+      setState({ selectedDungeon: null });
+    }
+  });
 }
