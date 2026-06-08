@@ -2,6 +2,7 @@ import type {
   BlizzardSeasonIndex,
   BlizzardSeason,
   BlizzardLeaderboard,
+  BlizzardLeaderboardRef,
 } from './types.js';
 
 const BASE_URL = 'https://us.api.blizzard.com';
@@ -29,6 +30,11 @@ export async function fetchSeason(token: string, seasonId: number): Promise<Bliz
 export async function fetchPeriodIds(token: string, seasonId: number): Promise<number[]> {
   const data = await get<BlizzardSeason>(`/data/wow/mythic-keystone/season/${seasonId}`, token);
   return data.periods.map(p => p.id);
+}
+
+export async function fetchAllDungeons(token: string): Promise<BlizzardLeaderboardRef[]> {
+  const data = await get<{ dungeons: BlizzardLeaderboardRef[] }>('/data/wow/mythic-keystone/dungeon/', token);
+  return data.dungeons;
 }
 
 export async function fetchLeaderboard(
