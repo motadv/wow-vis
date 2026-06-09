@@ -10,25 +10,13 @@ html, body {
 }
 
 #layout {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: 1fr 220px;
   height: 100vh;
-}
-
-#filters {
-  height: 48px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 8px;
-  background: #18181b;
-  border-bottom: 1px solid #27272a;
 }
 
 #middle {
   display: flex;
-  flex: 1;
   overflow: hidden;
 }
 
@@ -38,26 +26,16 @@ html, body {
   background: #09090b;
 }
 
-#detail {
-  display: none;
-  width: 384px;
+#heatmap {
+  width: 480px;
   flex-shrink: 0;
   overflow-y: auto;
   background: #18181b;
   border-left: 1px solid #27272a;
 }
 
-#detail.open {
-  display: block;
-}
-
-#scrubber {
-  height: 56px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 8px;
-  background: #18181b;
+#arc {
   border-top: 1px solid #27272a;
+  background: #18181b;
+  overflow: hidden;
 }
