@@ -21,15 +21,16 @@ html, body {
 }
 
 #map {
-  flex: 1;
+  width: 280px;
+  flex-shrink: 0;
   overflow: hidden;
   background: #09090b;
 }
 
 #heatmap {
-  width: 480px;
-  flex-shrink: 0;
+  flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #18181b;
   border-left: 1px solid #27272a;
 }

@@ -7,9 +7,8 @@ import { computeRanks } from '../utils/ranks.js';
 import { setState, subscribe } from '../state.js';
 import type { DungeonManifest, DungeonMeta, RankMatrixRow } from '../types.js';
 
-const LABEL_W = 180;
-const CELL_H = 22;
-const CELL_W = 34;
+const LABEL_W = 160;
+const CELL_H = 18;
 const HEADER_H = 64;
 
 type CellInfo = { rank: number; total: number; median_key: number };
@@ -64,6 +63,7 @@ export async function initHeatmap(
 
   container.textContent = '';
 
+  const CELL_W = Math.max(28, Math.floor((container.clientWidth - LABEL_W - 12) / seasons.length));
   const svgW = LABEL_W + seasons.length * CELL_W + 10;
   const svgH = HEADER_H + dungeons.length * CELL_H + 10;
 
