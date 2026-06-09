@@ -8,8 +8,8 @@ import { setState, subscribe } from "../state.js";
 import type { DungeonManifest, DungeonMeta, RankMatrixRow } from "../types.js";
 
 const LABEL_W = 160;
-const CELL_H = 16;
-const CELL_W = 16;
+const CELL_H = 18;
+const CELL_W = 18;
 const HEADER_H = 44;
 
 type CellInfo = { rank: number; total: number; median_key: number };
@@ -18,7 +18,7 @@ export async function initHeatmap(
   container: HTMLElement,
   manifest: DungeonManifest,
   conn: AsyncDuckDBConnection,
-): Promise<void> {
+): Promise<{ minKey: number; maxKey: number }> {
   const seasons = manifest.seasons
     .filter((s) => s.dungeonIds.length > 0)
     .sort((a, b) => a.id - b.id);
@@ -66,7 +66,7 @@ export async function initHeatmap(
 
   const titleEl = document.createElement("div");
   titleEl.style.cssText =
-    "padding:10px 12px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#71717a";
+    "padding:10px 12px 4px;font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#71717a";
   titleEl.textContent = "Dungeon Key Rank by Season";
   container.appendChild(titleEl);
 
@@ -159,4 +159,10 @@ export async function initHeatmap(
           : 0.4,
       );
   });
+
+  const allKeys = rawRows.map((r) => r.median_key);
+  return {
+    minKey: Math.floor(Math.min(...allKeys)),
+    maxKey: Math.ceil(Math.max(...allKeys)),
+  };
 }

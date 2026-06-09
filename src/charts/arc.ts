@@ -9,6 +9,12 @@ type ArcEntry = { season: SeasonMeta; rows: WeeklyArcRow[]; colorIndex: number }
 
 const MARGIN = { top: 20, right: 140, bottom: 36, left: 44 };
 
+let keyDomain: [number, number] = [0, 40];
+
+export function setKeyDomain(min: number, max: number): void {
+  keyDomain = [min, max];
+}
+
 export function initArc(
   container: HTMLElement,
   manifest: DungeonManifest,
@@ -80,12 +86,9 @@ function renderArc(
   const height = container.clientHeight - MARGIN.top - MARGIN.bottom - TITLE_H;
 
   const maxPeriods = Math.max(...arcs.map(a => a.rows.length));
-  const allKeys = arcs.flatMap(a => a.rows.map(r => r.median_key));
-  const keyMin = Math.floor(Math.min(...allKeys)) - 1;
-  const keyMax = Math.ceil(Math.max(...allKeys)) + 1;
 
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
-  const yScale = d3.scaleLinear().domain([keyMin, keyMax]).range([height, 0]);
+  const yScale = d3.scaleLinear().domain(keyDomain).range([height, 0]);
 
   const svg = d3.select(container)
     .append('svg')
