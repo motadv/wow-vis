@@ -1,39 +1,38 @@
 import * as duckdb from '@duckdb/duckdb-wasm';
-import mvpWasm from '@duckdb/duckdb-wasm/dist/duckdb-mvp.wasm?url';
-import mvpWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?url';
 import ehWasm from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
 import ehWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
-import coiWasm from '@duckdb/duckdb-wasm/dist/duckdb-coi.wasm?url';
-import coiWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-coi.worker.js?url';
-import coiPthread from '@duckdb/duckdb-wasm/dist/duckdb-browser-coi.pthread.worker.js?url';
 
-const BUNDLES: duckdb.DuckDBBundles = {
-  mvp: { mainModule: mvpWasm, mainWorker: mvpWorker },
-  eh: { mainModule: ehWasm, mainWorker: ehWorker },
-  coi: { mainModule: coiWasm, mainWorker: coiWorker, pthreadWorker: coiPthread },
-};
 
 let db: duckdb.AsyncDuckDB | null = null;
 let conn: duckdb.AsyncDuckDBConnection | null = null;
 const loadedSeasons = new Set<number>();
 
 export async function initDB(): Promise<void> {
-  const bundle = await duckdb.selectBundle(BUNDLES);
+  // Force the EH (exception-handling, single-threaded) bundle even when
+  // crossOriginIsolated is true.  The COI bundle has a shared-memory
+  // declaration mismatch with the wasm_threads parquet extension in DuckDB
+  // v1.5.1: the extension declares `memory shared=0` but the COI module
+  // imports it as shared=1, causing a LinkError at load time.
+  // The EH bundle and its wasm_eh parquet extension both use non-shared
+  // memory so the extension loads cleanly.
   const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
-  const worker = new Worker(bundle.mainWorker!);
+  const worker = new Worker(ehWorker);
   db = new duckdb.AsyncDuckDB(logger, worker);
-  await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+  await db.instantiate(ehWasm, null);
   conn = await db.connect();
 }
 
 export async function loadSeason(seasonId: number): Promise<void> {
-  if (!conn) throw new Error('DB not initialized');
+  if (!conn || !db) throw new Error('DB not initialized');
   if (loadedSeasons.has(seasonId)) return;
+
+  const name = `season-${seasonId}.parquet`;
+  const url = new URL(`/data/${name}`, window.location.origin).href;
+  await db.registerFileURL(name, url, duckdb.DuckDBDataProtocol.HTTP, false);
 
   const table = `leaderboard_${seasonId}`;
   await conn.query(
-    `CREATE TABLE IF NOT EXISTS ${table} AS
-     SELECT * FROM read_parquet('/data/season-${seasonId}.parquet')`,
+    `CREATE TABLE IF NOT EXISTS ${table} AS SELECT * FROM read_parquet('${name}')`,
   );
   loadedSeasons.add(seasonId);
 }

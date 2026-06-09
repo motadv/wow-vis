@@ -1,43 +1,53 @@
-import type { Era } from './types.js';
+import type { Era } from "./types.js";
 
-export const MAP_WIDTH = 2048;
-export const MAP_HEIGHT = 1400;
+export const MAP_WIDTH = 3840;
+export const MAP_HEIGHT = 2560;
 
-// Off-world cluster position (top-right corner)
-export const OFF_WORLD_X = 1850;
-export const OFF_WORLD_Y = 120;
+// Off-world cluster position
+export const OFF_WORLD_X = 2790;
+export const OFF_WORLD_Y = 2409;
 
 export const ERAS_IN_ORDER: Era[] = [
-  'vanilla', 'tbc', 'wotlk', 'cataclysm', 'mop', 'wod',
-  'legion', 'bfa', 'shadowlands', 'dragonflight', 'tww', 'midnight',
+  "vanilla",
+  "tbc",
+  "wotlk",
+  "cataclysm",
+  "mop",
+  "wod",
+  "legion",
+  "bfa",
+  "shadowlands",
+  "dragonflight",
+  "tww",
+  "midnight",
 ];
 
 export const ERA_LABELS: Record<Era, string> = {
-  vanilla: 'Vanilla',
-  tbc: 'The Burning Crusade',
-  wotlk: 'Wrath of the Lich King',
-  cataclysm: 'Cataclysm',
-  mop: 'Mists of Pandaria',
-  wod: 'Warlords of Draenor',
-  legion: 'Legion',
-  bfa: 'Battle for Azeroth',
-  shadowlands: 'Shadowlands',
-  dragonflight: 'Dragonflight',
-  tww: 'The War Within',
-  midnight: 'Midnight',
+  vanilla: "Vanilla",
+  tbc: "The Burning Crusade",
+  wotlk: "Wrath of the Lich King",
+  cataclysm: "Cataclysm",
+  mop: "Mists of Pandaria",
+  wod: "Warlords of Draenor",
+  legion: "Legion",
+  bfa: "Battle for Azeroth",
+  shadowlands: "Shadowlands",
+  dragonflight: "Dragonflight",
+  tww: "The War Within",
+  midnight: "Midnight",
 };
 
 export const ERA_PALETTE: Record<Era, string> = {
-  vanilla: '#c8a96e',
-  tbc: '#7cba5c',
-  wotlk: '#6baed6',
-  cataclysm: '#e06c4c',
-  mop: '#c96e8a',
-  wod: '#a08060',
-  legion: '#9b59b6',
-  bfa: '#2980b9',
-  shadowlands: '#8899bb',
-  dragonflight: '#e8a030',
-  tww: '#50c878',
-  midnight: '#c060d8',
+  vanilla: "#c8a96e",
+  tbc: "#7cba5c",
+  wotlk: "#6baed6",
+  cataclysm: "#e06c4c",
+  mop: "#c96e8a",
+  wod: "#a08060",
+  legion: "#9b59b6",
+  bfa: "#2980b9",
+  shadowlands: "#8899bb",
+  dragonflight: "#e8a030",
+  tww: "#50c878",
+  midnight: "#c060d8",
 };

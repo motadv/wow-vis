@@ -4,9 +4,6 @@ import { transformLeaderboard } from './transform.js';
 import { ensureOutDir, writeParquet, writeManifest } from './write.js';
 import type { DungeonManifest, DungeonMeta, SeasonMeta, LeaderboardEntry } from './types.js';
 
-// High-population US connected realm IDs
-const SAMPLE_REALM_IDS = [11, 3, 4, 57];
-
 const clientId = process.env.VITE_BLIZZARD_CLIENT_ID;
 const clientSecret = process.env.VITE_BLIZZARD_CLIENT_SECRET;
 if (!clientId || !clientSecret) {
@@ -18,22 +15,27 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function discoverActiveDungeons(
   token: string,
   allDungeonIds: number[],
-  periodId: number,
+  periods: number[],
   realmId: number,
 ): Promise<number[]> {
-  const active: number[] = [];
-  for (const dungeonId of allDungeonIds) {
-    await sleep(55);
-    try {
-      const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
-      if (lb.leading_groups && lb.leading_groups.length > 0) {
-        active.push(dungeonId);
+  // Try each period in order; stop as soon as we find one with data.
+  for (const periodId of periods) {
+    const active: number[] = [];
+    for (const dungeonId of allDungeonIds) {
+      await sleep(55);
+      try {
+        const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
+        if (lb.leading_groups && lb.leading_groups.length > 0) {
+          active.push(dungeonId);
+        }
+      } catch {
+        // dungeon not active in this period/season
       }
-    } catch {
-      // dungeon not active in this season
     }
+    if (active.length > 0) return active;
+    console.log(`    Period ${periodId} returned no data, trying next period...`);
   }
-  return active;
+  return [];
 }
 
 async function main() {
@@ -41,6 +43,9 @@ async function main() {
   const token = await fetchToken(clientId!, clientSecret!);
 
   await ensureOutDir();
+
+  // Verified high-population US connected realms (Area 52, Stormrage, Illidan, Mal'Ganis, Tichondrius)
+  const realmIds = [3676, 60, 57, 3684, 11];
 
   console.log('Fetching all M+ dungeons...');
   const allDungeons = await fetchAllDungeons(token);
@@ -65,11 +70,10 @@ async function main() {
 
     console.log(`\nProcessing season ${seasonId}: ${season.season_name}`);
     const periods = season.periods.map(p => p.id);
-    const probePeriod = periods[0];
 
-    console.log(`  Discovering active dungeons via period ${probePeriod} on realm ${SAMPLE_REALM_IDS[0]}...`);
+    console.log(`  Discovering active dungeons across ${periods.length} periods on realm ${realmIds[0]}...`);
     const activeDungeonIds = await discoverActiveDungeons(
-      token, allDungeonIds, probePeriod, SAMPLE_REALM_IDS[0],
+      token, allDungeonIds, periods, realmIds[0],
     );
     console.log(`  Active dungeons: ${activeDungeonIds.join(', ')}`);
 
@@ -78,10 +82,9 @@ async function main() {
         dungeonMap.set(dungeonId, {
           id: dungeonId,
           name: dungeonNameById.get(dungeonId) ?? `Dungeon ${dungeonId}`,
-          era: 'vanilla',     // placeholder — fill manually
-          mapX: 0,            // placeholder — fill manually
-          mapY: 0,            // placeholder — fill manually
-          offWorld: false,    // placeholder — fill manually
+          era: 'vanilla',   // placeholder — fill manually
+          zone: 'unknown',  // placeholder — fill manually
+          offWorld: false,  // placeholder — fill manually
         });
       }
     }
@@ -97,7 +100,7 @@ async function main() {
     const allEntries: LeaderboardEntry[] = [];
 
     for (const dungeonId of activeDungeonIds) {
-      for (const realmId of SAMPLE_REALM_IDS) {
+      for (const realmId of realmIds) {
         for (const periodId of periods) {
           try {
             await sleep(55);
@@ -119,6 +122,7 @@ async function main() {
   const manifest: DungeonManifest = {
     dungeons: Array.from(dungeonMap.values()),
     seasons,
+    zones: [],
   };
 
   await writeManifest(manifest);

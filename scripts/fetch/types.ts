@@ -18,9 +18,14 @@ export interface DungeonMeta {
   id: number;        // map_challenge_mode_id
   name: string;
   era: Era;          // expansion of origin
-  mapX: number;      // position on Azeroth world map (0-2048 range)
-  mapY: number;
+  zone: string;      // overworld zone slug — matches ZoneMeta.slug
   offWorld: boolean; // true = off-world dungeon, render in off-world cluster
+}
+
+export interface ZoneMeta {
+  slug: string;
+  x: number;         // anchor on world map image (0-3840)
+  y: number;         // anchor on world map image (0-2560)
 }
 
 export interface SeasonMeta {
@@ -33,6 +38,7 @@ export interface SeasonMeta {
 export interface DungeonManifest {
   dungeons: DungeonMeta[];
   seasons: SeasonMeta[];
+  zones: ZoneMeta[];
 }
 
 // Parquet row — snake_case to match column names

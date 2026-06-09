@@ -29,7 +29,9 @@ Vite exposes these as `import.meta.env.VITE_*` in the browser bundle. The fetch 
 - Season detail (`/mythic-keystone/season/{id}`) has no dungeon list — fetch `/connected-realm/{id}/mythic-leaderboard/index` per realm to get current-season dungeon IDs.
 - Dungeon identifier in leaderboard responses is `map_challenge_mode_id`, not `id`.
 - Real API response samples are saved in `docs/api-samples/` — use as reference when writing types.
-- Connected realm 11 = Tichondrius/Illidan cluster (high-population US; used for leaderboard sampling).
+- HTTP 500 from the leaderboard API means the resource doesn't exist ("Downstream Error") — not a server fault. Verify realm/dungeon/period combo is valid.
+- Verified high-population US connected realm IDs used for sampling: 3676 (Area 52), 60 (Stormrage), 57 (Illidan), 3684 (Mal'Ganis), 11 (Tichondrius).
+- Seasons 1–5 have no leaderboard data (Blizzard doesn't retain it); Northrend and Pandaria have no dungeons in the dataset (those appeared only in seasons 1–3).
 
 ## Architecture
 
@@ -39,7 +41,7 @@ Two distinct runtimes — an offline data pipeline and an in-browser viz — sha
 
 Run once via `npm run fetch`. Authenticates with Blizzard OAuth, iterates all completed Mythic+ seasons, fetches leaderboard data for a sample of US connected realms, and writes:
 - `public/data/season-N.parquet` — one file per completed season
-- `public/data/dungeons.json` — dungeon manifest (requires manual editing of `era`, `mapX`, `mapY`, `offWorld` fields after generation)
+- `public/data/dungeons.json` — dungeon manifest. After generation, manually set `era`, `zone`, `offWorld` per dungeon and `x`/`y` per zone anchor. See `docs/data-decisions.md` for all classification decisions already made.
 
 Uses `tsx` to run TypeScript directly and the native `duckdb` Node.js package to write Parquet.
 

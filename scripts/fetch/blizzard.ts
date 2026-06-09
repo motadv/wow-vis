@@ -13,7 +13,8 @@ async function get<T>(path: string, token: string): Promise<T> {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
-    throw new Error(`API error ${response.status} for ${url}`);
+    const body = await response.text().catch(() => '<unreadable>');
+    throw new Error(`API error ${response.status} for ${url} — body: ${body}`);
   }
   return response.json() as T;
 }
