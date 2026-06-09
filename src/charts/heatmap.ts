@@ -64,6 +64,12 @@ export async function initHeatmap(
 
   container.textContent = "";
 
+  const titleEl = document.createElement("div");
+  titleEl.style.cssText =
+    "padding:10px 12px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#71717a";
+  titleEl.textContent = "Dungeon Key Rank by Season";
+  container.appendChild(titleEl);
+
   const svgW = LABEL_W + seasons.length * CELL_W + 10;
   const svgH = HEADER_H + dungeons.length * CELL_H + 10;
 

@@ -56,9 +56,11 @@ export function initArc(
   });
 }
 
+const TITLE_H = 32;
+
 function renderArc(
   container: HTMLElement,
-  _title: string,
+  title: string,
   arcs: ArcEntry[],
   emphasizedSeasonId: number | null,
 ): void {
@@ -66,10 +68,16 @@ function renderArc(
 
   if (arcs.length === 0 || arcs.every(a => a.rows.length === 0)) return;
 
+  const titleEl = document.createElement('div');
+  titleEl.style.cssText =
+    'padding:6px 12px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#71717a';
+  titleEl.textContent = `${title} — Weekly Key Progression`;
+  container.appendChild(titleEl);
+
   const colors = d3.schemeTableau10 as readonly string[];
 
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
-  const height = container.clientHeight - MARGIN.top - MARGIN.bottom - 4;
+  const height = container.clientHeight - MARGIN.top - MARGIN.bottom - TITLE_H;
 
   const maxPeriods = Math.max(...arcs.map(a => a.rows.length));
   const allKeys = arcs.flatMap(a => a.rows.map(r => r.median_key));
@@ -82,7 +90,7 @@ function renderArc(
   const svg = d3.select(container)
     .append('svg')
     .attr('width', container.clientWidth)
-    .attr('height', container.clientHeight - 4)
+    .attr('height', container.clientHeight - TITLE_H)
     .style('font-family', 'sans-serif');
 
   const g = svg.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
