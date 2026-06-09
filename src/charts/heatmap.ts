@@ -8,8 +8,9 @@ import { setState, subscribe } from '../state.js';
 import type { DungeonManifest, DungeonMeta, RankMatrixRow } from '../types.js';
 
 const LABEL_W = 160;
-const CELL_H = 18;
-const HEADER_H = 64;
+const CELL_H = 16;
+const CELL_W = 16;
+const HEADER_H = 44;
 
 type CellInfo = { rank: number; total: number; median_key: number };
 
@@ -63,7 +64,6 @@ export async function initHeatmap(
 
   container.textContent = '';
 
-  const CELL_W = Math.max(28, Math.floor((container.clientWidth - LABEL_W - 12) / seasons.length));
   const svgW = LABEL_W + seasons.length * CELL_W + 10;
   const svgH = HEADER_H + dungeons.length * CELL_H + 10;
 
@@ -75,19 +75,19 @@ export async function initHeatmap(
     .attr('height', svgH)
     .style('font-family', 'sans-serif');
 
-  // Season column headers — rotated −45°
-  seasons.forEach((season, si) => {
-    const x = LABEL_W + si * CELL_W + CELL_W / 2;
-    const y = HEADER_H - 6;
-    const label = season.name.replace('Mythic+ Dungeons (', '').replace(')', '');
+  // Season column headers — rotated −90° to fit in square cells
+  seasons.forEach((_, si) => {
+    const cx = LABEL_W + si * CELL_W + CELL_W / 2;
+    const cy = HEADER_H / 2;
     svg.append('text')
-      .attr('x', x)
-      .attr('y', y)
-      .attr('text-anchor', 'start')
-      .attr('font-size', 10)
+      .attr('x', cx)
+      .attr('y', cy)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .attr('font-size', 9)
       .attr('fill', '#a1a1aa')
-      .attr('transform', `rotate(-45,${x},${y})`)
-      .text(label);
+      .attr('transform', `rotate(-90,${cx},${cy})`)
+      .text(`S${si + 1}`);
   });
 
   // Dungeon rows
