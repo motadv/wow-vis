@@ -1,11 +1,11 @@
-import * as d3 from 'd3';
-import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import { ERA_PALETTE } from '../config.js';
-import { getSeasonRankMatrix } from '../db/queries.js';
-import { loadSeason } from '../db/init.js';
-import { computeRanks } from '../utils/ranks.js';
-import { setState, subscribe } from '../state.js';
-import type { DungeonManifest, DungeonMeta, RankMatrixRow } from '../types.js';
+import * as d3 from "d3";
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
+import { ERA_PALETTE } from "../config.js";
+import { getSeasonRankMatrix } from "../db/queries.js";
+import { loadSeason } from "../db/init.js";
+import { computeRanks } from "../utils/ranks.js";
+import { setState, subscribe } from "../state.js";
+import type { DungeonManifest, DungeonMeta, RankMatrixRow } from "../types.js";
 
 const LABEL_W = 160;
 const CELL_H = 16;
@@ -20,12 +20,12 @@ export async function initHeatmap(
   conn: AsyncDuckDBConnection,
 ): Promise<void> {
   const seasons = manifest.seasons
-    .filter(s => s.dungeonIds.length > 0)
+    .filter((s) => s.dungeonIds.length > 0)
     .sort((a, b) => a.id - b.id);
 
-  container.textContent = 'Loading…';
+  container.textContent = "Loading…";
 
-  await Promise.all(seasons.map(s => loadSeason(s.id)));
+  await Promise.all(seasons.map((s) => loadSeason(s.id)));
 
   const rawRows: RankMatrixRow[] = [];
   for (const s of seasons) {
@@ -59,86 +59,98 @@ export async function initHeatmap(
   });
 
   const dungeons = dungeonIds
-    .map(id => manifest.dungeons.find(d => d.id === id))
+    .map((id) => manifest.dungeons.find((d) => d.id === id))
     .filter((d): d is DungeonMeta => d !== undefined);
 
-  container.textContent = '';
+  container.textContent = "";
 
   const svgW = LABEL_W + seasons.length * CELL_W + 10;
   const svgH = HEADER_H + dungeons.length * CELL_H + 10;
 
   const colorScale = d3.scaleSequential(d3.interpolateBlues).domain([0, 1]);
 
-  const svg = d3.select(container)
-    .append('svg')
-    .attr('width', svgW)
-    .attr('height', svgH)
-    .style('font-family', 'sans-serif');
+  const svg = d3
+    .select(container)
+    .append("svg")
+    .attr("width", svgW)
+    .attr("height", svgH)
+    .style("font-family", "sans-serif");
 
   // Season column headers — rotated −90° to fit in square cells
   seasons.forEach((_, si) => {
     const cx = LABEL_W + si * CELL_W + CELL_W / 2;
     const cy = HEADER_H / 2;
-    svg.append('text')
-      .attr('x', cx)
-      .attr('y', cy)
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .attr('font-size', 9)
-      .attr('fill', '#a1a1aa')
-      .attr('transform', `rotate(-90,${cx},${cy})`)
+    svg
+      .append("text")
+      .attr("x", cx)
+      .attr("y", cy)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .attr("font-size", 9)
+      .attr("fill", "#a1a1aa")
+      // .attr('transform', `rotate(-90,${cx},${cy})`)
       .text(`S${si + 1}`);
   });
 
   // Dungeon rows
-  const rows = svg.selectAll<SVGGElement, DungeonMeta>('.dungeon-row')
-    .data(dungeons, d => d.id)
+  const rows = svg
+    .selectAll<SVGGElement, DungeonMeta>(".dungeon-row")
+    .data(dungeons, (d) => d.id)
     .enter()
-    .append('g')
-    .attr('class', 'dungeon-row')
-    .attr('transform', (_, i) => `translate(0,${HEADER_H + i * CELL_H})`);
+    .append("g")
+    .attr("class", "dungeon-row")
+    .attr("transform", (_, i) => `translate(0,${HEADER_H + i * CELL_H})`);
 
   // Dungeon name labels
-  rows.append('text')
-    .attr('x', LABEL_W - 6)
-    .attr('y', CELL_H / 2 + 4)
-    .attr('text-anchor', 'end')
-    .attr('font-size', 10)
-    .attr('fill', d => ERA_PALETTE[d.era])
-    .text(d => d.name);
+  rows
+    .append("text")
+    .attr("x", LABEL_W - 6)
+    .attr("y", CELL_H / 2 + 4)
+    .attr("text-anchor", "end")
+    .attr("font-size", 10)
+    .attr("fill", (d) => ERA_PALETTE[d.era])
+    .text((d) => d.name);
 
   // Cells — one per season per row
   seasons.forEach((season, si) => {
-    rows.append('rect')
-      .attr('x', LABEL_W + si * CELL_W)
-      .attr('y', 1)
-      .attr('width', CELL_W - 1)
-      .attr('height', CELL_H - 2)
-      .attr('rx', 2)
-      .attr('fill', d => {
+    rows
+      .append("rect")
+      .attr("x", LABEL_W + si * CELL_W)
+      .attr("y", 1)
+      .attr("width", CELL_W - 1)
+      .attr("height", CELL_H - 2)
+      .attr("rx", 2)
+      .attr("fill", (d) => {
         const info = lookup.get(d.id)?.get(season.id);
-        if (!info) return '#27272a';
+        if (!info) return "#27272a";
         return colorScale(normalizedValue(info));
       })
-      .style('cursor', d => lookup.get(d.id)?.has(season.id) ? 'pointer' : 'default')
-      .on('click', (_, d) => {
+      .style("cursor", (d) =>
+        lookup.get(d.id)?.has(season.id) ? "pointer" : "default",
+      )
+      .on("click", (_, d) => {
         if (!lookup.get(d.id)?.has(season.id)) return;
         setState({ selectedDungeon: d.id, selectedSeasonForArc: season.id });
       })
-      .append('title')
-      .text(d => {
+      .append("title")
+      .text((d) => {
         const info = lookup.get(d.id)?.get(season.id);
         if (!info) return `${d.name} — not in ${season.name}`;
-        const label = season.name.replace('Mythic+ Dungeons (', '').replace(')', '');
+        const label = season.name
+          .replace("Mythic+ Dungeons (", "")
+          .replace(")", "");
         return `${d.name}\n${label}\nMedian key: ${info.median_key.toFixed(1)}\nRank ${info.rank} of ${info.total}`;
       });
   });
 
   // Highlight selected dungeon row
-  subscribe(state => {
-    svg.selectAll<SVGGElement, DungeonMeta>('.dungeon-row')
-      .attr('opacity', d =>
-        state.selectedDungeon === null || d.id === state.selectedDungeon ? 1 : 0.4
+  subscribe((state) => {
+    svg
+      .selectAll<SVGGElement, DungeonMeta>(".dungeon-row")
+      .attr("opacity", (d) =>
+        state.selectedDungeon === null || d.id === state.selectedDungeon
+          ? 1
+          : 0.4,
       );
   });
 }
