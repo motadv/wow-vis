@@ -1,96 +1,129 @@
-import * as d3 from 'd3';
-import { MAP_WIDTH, MAP_HEIGHT, OFF_WORLD_X, OFF_WORLD_Y, ERA_PALETTE } from '../config.js';
-import { getState, subscribe } from '../state.js';
-import { setState } from '../state.js';
-import type { DungeonManifest, DungeonMeta, VolumeRow } from '../types.js';
+import * as d3 from "d3";
+import {
+  MAP_WIDTH,
+  MAP_HEIGHT,
+  OFF_WORLD_X,
+  OFF_WORLD_Y,
+  ERA_PALETTE,
+} from "../config.js";
+import { getState, subscribe, setState } from "../state.js";
+import type { DungeonManifest, DungeonMeta } from "../types.js";
+
+const CLUSTER_RADIUS = 40;
 
 let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
 let nodesG: d3.Selection<SVGGElement, unknown, null, undefined>;
 let manifest: DungeonManifest;
-let volumeMap = new Map<number, VolumeRow>();
-let rScale = d3.scaleSqrt().range([4, 28]);
+let positionMap = new Map<number, { x: number; y: number }>();
+
+function buildPositions(): void {
+  positionMap = new Map();
+  const zoneBySlug = new Map(manifest.zones.map((z) => [z.slug, z]));
+
+  const byZone = new Map<string, DungeonMeta[]>();
+  for (const d of manifest.dungeons) {
+    if (d.offWorld) continue;
+    const arr = byZone.get(d.zone) ?? [];
+    arr.push(d);
+    byZone.set(d.zone, arr);
+  }
+
+  for (const [slug, dungeons] of byZone) {
+    const zone = zoneBySlug.get(slug);
+    if (!zone) continue;
+    if (dungeons.length === 1) {
+      positionMap.set(dungeons[0].id, { x: zone.x, y: zone.y });
+    } else {
+      dungeons.forEach((d, i) => {
+        const angle = (2 * Math.PI * i) / dungeons.length - Math.PI / 2;
+        positionMap.set(d.id, {
+          x: zone.x + CLUSTER_RADIUS * Math.cos(angle),
+          y: zone.y + CLUSTER_RADIUS * Math.sin(angle),
+        });
+      });
+    }
+  }
+
+  const offWorld = manifest.dungeons.filter((d) => d.offWorld);
+  const half = Math.floor(offWorld.length / 2);
+  offWorld.forEach((d, i) => {
+    positionMap.set(d.id, { x: OFF_WORLD_X + (i - half) * 60, y: OFF_WORLD_Y });
+  });
+}
 
 export function initMap(container: HTMLElement, mf: DungeonManifest): void {
   manifest = mf;
+  buildPositions();
 
-  svg = d3.select(container).append('svg')
-    .attr('width', '100%')
-    .attr('height', '100%')
-    .attr('viewBox', `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`)
-    .attr('preserveAspectRatio', 'xMidYMid meet')
-    .style('display', 'block');
+  svg = d3
+    .select(container)
+    .append("svg")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("viewBox", `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("display", "block");
 
-  const root = svg.append('g').attr('class', 'zoom-root');
+  const root = svg.append("g").attr("class", "zoom-root");
 
-  root.append('image')
-    .attr('href', '/map.jpg')
-    .attr('width', MAP_WIDTH)
-    .attr('height', MAP_HEIGHT)
-    .attr('preserveAspectRatio', 'xMidYMid slice');
+  root
+    .append("image")
+    .attr("href", "/map.jpg")
+    .attr("width", MAP_WIDTH)
+    .attr("height", MAP_HEIGHT)
+    .attr("preserveAspectRatio", "xMidYMid slice");
 
-  root.append('text')
-    .attr('x', OFF_WORLD_X)
-    .attr('y', OFF_WORLD_Y - 16)
-    .attr('text-anchor', 'middle')
-    .attr('fill', '#a1a1aa')
-    .attr('font-size', 13)
-    .text('Off-world');
+  root
+    .append("text")
+    .attr("x", OFF_WORLD_X)
+    .attr("y", OFF_WORLD_Y - 100)
+    .attr("text-anchor", "middle")
+    .attr("fill", "#583c15ff")
+    .attr("stroke", "#e3cba4ff")
+    .attr("stroke-width", 4)
+    .attr("font-size", 128)
+    .attr("font-weight", "bold")
+    .text("Off-World");
 
-  nodesG = root.append('g').attr('class', 'nodes');
+  nodesG = root.append("g").attr("class", "nodes");
 
   svg.call(
-    d3.zoom<SVGSVGElement, unknown>()
+    d3
+      .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.4, 5])
-      .on('zoom', (event) => root.attr('transform', event.transform)),
+      .on("zoom", (event) => root.attr("transform", event.transform)),
   );
 
   subscribe(renderNodes);
 }
 
-export function updateVolume(rows: VolumeRow[]): void {
-  volumeMap = new Map(rows.map(r => [r.dungeon_id, r]));
-  const counts = rows.map(r => r.entry_count);
-  if (counts.length > 0) {
-    rScale.domain([0, d3.max(counts)!]);
-  }
-  renderNodes();
-}
-
-function dungeonX(d: DungeonMeta): number {
-  return d.offWorld ? OFF_WORLD_X + (manifest.dungeons.filter(x => x.offWorld).indexOf(d) - 2) * 32 : d.mapX;
-}
-
-function dungeonY(d: DungeonMeta): number {
-  return d.offWorld ? OFF_WORLD_Y : d.mapY;
-}
-
 function renderNodes(): void {
   if (!nodesG) return;
   const state = getState();
-  const activeEras = new Set(state.filterEras);
 
-  const nodes = nodesG.selectAll<SVGCircleElement, DungeonMeta>('circle')
-    .data(manifest.dungeons, d => d.id);
+  const nodes = nodesG
+    .selectAll<SVGCircleElement, DungeonMeta>("circle")
+    .data(manifest.dungeons, (d) => d.id);
 
-  nodes.enter().append('circle')
-    .attr('cx', dungeonX)
-    .attr('cy', dungeonY)
-    .attr('stroke-width', 2)
-    .style('cursor', 'pointer')
-    .on('click', (_event, d) => setState({ selectedDungeon: d.id }))
+  nodes
+    .enter()
+    .append("circle")
+    .attr("cx", (d) => positionMap.get(d.id)?.x ?? 0)
+    .attr("cy", (d) => positionMap.get(d.id)?.y ?? 0)
+    .attr("r", 14)
+    .attr("stroke-width", 2)
+    .style("cursor", "pointer")
+    .on("click", (_event, d) => setState({ selectedDungeon: d.id, selectedSeasonForArc: null }))
     .merge(nodes)
-    .transition().duration(300)
-    .attr('r', d => {
-      const v = volumeMap.get(d.id);
-      return v ? rScale(v.entry_count) : 5;
-    })
-    .attr('fill', d => ERA_PALETTE[d.era])
-    .attr('stroke', d => d.id === state.selectedDungeon ? '#ffffff' : 'rgba(0,0,0,0.4)')
-    .attr('opacity', d => {
-      if (activeEras.size > 0 && !activeEras.has(d.era)) return 0.15;
-      if (state.selectedDungeon !== null && d.id !== state.selectedDungeon) return 0.5;
-      return 1;
-    });
+    .transition()
+    .duration(300)
+    .attr("fill", (d) => ERA_PALETTE[d.era])
+    .attr("stroke", (d) =>
+      d.id === state.selectedDungeon ? "#ffffff" : "rgba(0,0,0,0.4)",
+    )
+    .attr("opacity", (d) =>
+      state.selectedDungeon !== null && d.id !== state.selectedDungeon ? 0.5 : 1
+    );
 
   nodes.exit().remove();
 }
