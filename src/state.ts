@@ -1,10 +1,8 @@
 import type { AppState } from './types.js';
 
 let state: AppState = {
-  selectedSeason: -1,
   selectedDungeon: null,
-  viewMode: 'era',
-  filterEras: [],
+  selectedSeasonForArc: null,
 };
 
 type Listener = (state: AppState) => void;
