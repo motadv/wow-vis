@@ -32,3 +32,115 @@ html, body {
 #map {
   display: none;
 }
+
+/* --- Swimlane heatmap --- */
+
+.heatmap-title {
+  padding: 10px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #71717a;
+}
+
+.heatmap-lanes {
+  padding: 0 12px;
+}
+
+.lane {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.lane--faded .tile {
+  opacity: 0.15;
+}
+
+.lane-label {
+  font-size: 9px;
+  color: #52525b;
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.lane-tiles {
+  display: flex;
+  gap: 3px;
+}
+
+.tile {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.12s;
+}
+
+.tile--highlighted {
+  outline: 2px solid #fbbf24;
+  outline-offset: 1px;
+}
+
+.tile--selected {
+  outline: 2px solid #818cf8;
+  outline-offset: 1px;
+}
+
+.tile-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  color: #f4f4f5;
+  line-height: 1.5;
+}
+
+.tile:hover .tile-tooltip {
+  display: block;
+}
+
+.heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  margin-top: 6px;
+  border-top: 1px solid #27272a;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  color: #71717a;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}

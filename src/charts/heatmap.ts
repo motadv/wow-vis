@@ -1,18 +1,10 @@
-import * as d3 from "d3";
-import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
-import { ERA_PALETTE } from "../config.js";
-import { getSeasonRankMatrix } from "../db/queries.js";
-import { loadSeason } from "../db/init.js";
-import { computeRanks } from "../utils/ranks.js";
-import { setState, subscribe } from "../state.js";
-import type { DungeonManifest, DungeonMeta, RankMatrixRow } from "../types.js";
-
-const LABEL_W = 160;
-const CELL_H = 18;
-const CELL_W = 18;
-const HEADER_H = 44;
-
-type CellInfo = { rank: number; total: number; median_key: number };
+import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
+import { ERA_PALETTE, ERA_LABELS, ERAS_IN_ORDER } from '../config.js';
+import { getSeasonRankMatrix } from '../db/queries.js';
+import { loadSeason } from '../db/init.js';
+import { computeRanks } from '../utils/ranks.js';
+import { setState, subscribe } from '../state.js';
+import type { DungeonManifest, RankMatrixRow, SeasonMeta } from '../types.js';
 
 export async function initHeatmap(
   container: HTMLElement,
@@ -23,8 +15,7 @@ export async function initHeatmap(
     .filter((s) => s.dungeonIds.length > 0)
     .sort((a, b) => a.id - b.id);
 
-  container.textContent = "Loading…";
-
+  container.textContent = 'Loading…';
   await Promise.all(seasons.map((s) => loadSeason(s.id)));
 
   const rawRows: RankMatrixRow[] = [];
@@ -35,134 +26,138 @@ export async function initHeatmap(
 
   const ranked = computeRanks(rawRows);
 
-  const lookup = new Map<number, Map<number, CellInfo>>();
-  for (const r of ranked) {
-    if (!lookup.has(r.dungeon_id)) lookup.set(r.dungeon_id, new Map());
-    lookup.get(r.dungeon_id)!.set(r.season_id, {
-      rank: r.rank,
-      total: r.total,
-      median_key: r.median_key,
+  // Per-season sorted list: rank 1 (best) first → leftmost tile
+  const bySeason = new Map<number, typeof ranked>();
+  for (const season of seasons) {
+    bySeason.set(
+      season.id,
+      ranked.filter((r) => r.season_id === season.id).sort((a, b) => a.rank - b.rank),
+    );
+  }
+
+  container.textContent = '';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'heatmap-title';
+  titleEl.textContent = 'Dungeon Key Rank by Season';
+  container.appendChild(titleEl);
+
+  const lanesEl = document.createElement('div');
+  lanesEl.className = 'heatmap-lanes';
+  container.appendChild(lanesEl);
+
+  for (const season of seasons) {
+    const entries = bySeason.get(season.id) ?? [];
+
+    const lane = document.createElement('div');
+    lane.className = 'lane';
+    lane.dataset.seasonId = String(season.id);
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'lane-label';
+    labelEl.textContent = seasonAbbrev(season);
+    lane.appendChild(labelEl);
+
+    const tilesEl = document.createElement('div');
+    tilesEl.className = 'lane-tiles';
+
+    for (const r of entries) {
+      const dungeon = manifest.dungeons.find((d) => d.id === r.dungeon_id);
+      if (!dungeon) continue;
+
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.dataset.dungeonId = String(dungeon.id);
+      tile.style.background = ERA_PALETTE[dungeon.era];
+      tile.textContent = dungeon.abbrev;
+
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tile-tooltip';
+      const seasonShort = season.name.replace('Mythic+ Dungeons (', '').replace(')', '');
+      const nameStrong = document.createElement('strong');
+      nameStrong.textContent = dungeon.name;
+      tooltip.appendChild(nameStrong);
+      tooltip.appendChild(document.createElement('br'));
+      tooltip.appendChild(document.createTextNode(seasonShort));
+      tooltip.appendChild(document.createElement('br'));
+      tooltip.appendChild(document.createTextNode(`Median key: +${r.median_key.toFixed(1)}`));
+      tooltip.appendChild(document.createElement('br'));
+      tooltip.appendChild(document.createTextNode(`Rank ${r.rank} of ${r.total}`));
+      tile.appendChild(tooltip);
+
+      tile.addEventListener('mouseenter', () => applyHighlight(dungeon.id));
+      tile.addEventListener('mouseleave', clearHighlight);
+      tile.addEventListener('click', () =>
+        setState({ selectedDungeon: dungeon.id, selectedSeasonForArc: season.id }),
+      );
+
+      tilesEl.appendChild(tile);
+    }
+
+    lane.appendChild(tilesEl);
+    lanesEl.appendChild(lane);
+  }
+
+  // Era legend (only eras present in the manifest, in canonical order)
+  const usedEras = ERAS_IN_ORDER.filter((era) =>
+    manifest.dungeons.some((d) => d.era === era),
+  );
+  const legendEl = document.createElement('div');
+  legendEl.className = 'heatmap-legend';
+  for (const era of usedEras) {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const dot = document.createElement('span');
+    dot.className = 'legend-dot';
+    dot.style.background = ERA_PALETTE[era];
+    const label = document.createElement('span');
+    label.textContent = ERA_LABELS[era];
+    item.appendChild(dot);
+    item.appendChild(label);
+    legendEl.appendChild(item);
+  }
+  container.appendChild(legendEl);
+
+  // Keep .tile--selected in sync with global state (e.g. arc legend clicks)
+  subscribe((state) => {
+    container.querySelectorAll<HTMLElement>('.tile').forEach((tile) => {
+      tile.classList.toggle(
+        'tile--selected',
+        state.selectedDungeon !== null &&
+          Number(tile.dataset.dungeonId) === state.selectedDungeon,
+      );
+    });
+  });
+
+  function applyHighlight(dungeonId: number): void {
+    container.querySelectorAll<HTMLElement>('.lane').forEach((lane) => {
+      const hasDungeon = lane.querySelector(`[data-dungeon-id="${dungeonId}"]`) !== null;
+      lane.classList.toggle('lane--faded', !hasDungeon);
+    });
+    container.querySelectorAll<HTMLElement>('.tile').forEach((tile) => {
+      tile.classList.toggle('tile--highlighted', Number(tile.dataset.dungeonId) === dungeonId);
     });
   }
 
-  function normalizedValue(info: CellInfo): number {
-    return info.total === 1 ? 1 : 1 - (info.rank - 1) / (info.total - 1);
+  function clearHighlight(): void {
+    container.querySelectorAll('.lane').forEach((l) => l.classList.remove('lane--faded'));
+    container.querySelectorAll('.tile').forEach((t) => t.classList.remove('tile--highlighted'));
   }
-
-  const dungeonIds = [...lookup.keys()];
-  dungeonIds.sort((a, b) => {
-    const mean = (id: number) => {
-      const vals = [...lookup.get(id)!.values()];
-      return vals.reduce((acc, v) => acc + normalizedValue(v), 0) / vals.length;
-    };
-    return mean(b) - mean(a);
-  });
-
-  const dungeons = dungeonIds
-    .map((id) => manifest.dungeons.find((d) => d.id === id))
-    .filter((d): d is DungeonMeta => d !== undefined);
-
-  container.textContent = "";
-
-  const titleEl = document.createElement("div");
-  titleEl.style.cssText =
-    "padding:10px 12px 4px;font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#71717a";
-  titleEl.textContent = "Dungeon Key Rank by Season";
-  container.appendChild(titleEl);
-
-  const svgW = LABEL_W + seasons.length * CELL_W + 10;
-  const svgH = HEADER_H + dungeons.length * CELL_H + 10;
-
-  const colorScale = d3.scaleSequential(d3.interpolateBlues).domain([0, 1]);
-
-  const svg = d3
-    .select(container)
-    .append("svg")
-    .attr("width", svgW)
-    .attr("height", svgH)
-    .style("font-family", "sans-serif");
-
-  // Season column headers — rotated −90° to fit in square cells
-  seasons.forEach((_, si) => {
-    const cx = LABEL_W + si * CELL_W + CELL_W / 2;
-    const cy = HEADER_H / 2;
-    svg
-      .append("text")
-      .attr("x", cx)
-      .attr("y", cy)
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .attr("font-size", 9)
-      .attr("fill", "#a1a1aa")
-      // .attr('transform', `rotate(-90,${cx},${cy})`)
-      .text(`S${si + 1}`);
-  });
-
-  // Dungeon rows
-  const rows = svg
-    .selectAll<SVGGElement, DungeonMeta>(".dungeon-row")
-    .data(dungeons, (d) => d.id)
-    .enter()
-    .append("g")
-    .attr("class", "dungeon-row")
-    .attr("transform", (_, i) => `translate(0,${HEADER_H + i * CELL_H})`);
-
-  // Dungeon name labels
-  rows
-    .append("text")
-    .attr("x", LABEL_W - 6)
-    .attr("y", CELL_H / 2 + 4)
-    .attr("text-anchor", "end")
-    .attr("font-size", 10)
-    .attr("fill", (d) => ERA_PALETTE[d.era])
-    .text((d) => d.name);
-
-  // Cells — one per season per row
-  seasons.forEach((season, si) => {
-    rows
-      .append("rect")
-      .attr("x", LABEL_W + si * CELL_W)
-      .attr("y", 1)
-      .attr("width", CELL_W - 1)
-      .attr("height", CELL_H - 2)
-      .attr("rx", 2)
-      .attr("fill", (d) => {
-        const info = lookup.get(d.id)?.get(season.id);
-        if (!info) return "#27272a";
-        return colorScale(normalizedValue(info));
-      })
-      .style("cursor", (d) =>
-        lookup.get(d.id)?.has(season.id) ? "pointer" : "default",
-      )
-      .on("click", (_, d) => {
-        if (!lookup.get(d.id)?.has(season.id)) return;
-        setState({ selectedDungeon: d.id, selectedSeasonForArc: season.id });
-      })
-      .append("title")
-      .text((d) => {
-        const info = lookup.get(d.id)?.get(season.id);
-        if (!info) return `${d.name} — not in ${season.name}`;
-        const label = season.name
-          .replace("Mythic+ Dungeons (", "")
-          .replace(")", "");
-        return `${d.name}\n${label}\nMedian key: ${info.median_key.toFixed(1)}\nRank ${info.rank} of ${info.total}`;
-      });
-  });
-
-  // Highlight selected dungeon row
-  subscribe((state) => {
-    svg
-      .selectAll<SVGGElement, DungeonMeta>(".dungeon-row")
-      .attr("opacity", (d) =>
-        state.selectedDungeon === null || d.id === state.selectedDungeon
-          ? 1
-          : 0.4,
-      );
-  });
 
   const allKeys = rawRows.map((r) => r.median_key);
   return {
     minKey: Math.floor(Math.min(...allKeys)),
     maxKey: Math.ceil(Math.max(...allKeys)),
   };
+}
+
+function seasonAbbrev(season: SeasonMeta): string {
+  const m = season.name.match(/\((.+?) Season (\d+)\)/);
+  if (!m) return `S${season.id}`;
+  const expansions: Record<string, string> = {
+    Shadowlands: 'SL',
+    Dragonflight: 'DF',
+    'The War Within': 'TWW',
+  };
+  return `${expansions[m[1]] ?? m[1]} S${m[2]}`;
 }
