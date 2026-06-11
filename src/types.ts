@@ -17,6 +17,7 @@ export type Era =
 export interface DungeonMeta {
   id: number;        // map_challenge_mode_id
   name: string;
+  abbrev: string;    // short tile label, 2–5 chars, unique across all dungeons
   era: Era;          // expansion of origin
   zone: string;      // overworld zone slug — matches ZoneMeta.slug
   offWorld: boolean; // true = off-world dungeon, render in off-world cluster
