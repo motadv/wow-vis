@@ -3,6 +3,7 @@
     {
       "id": 375,
       "name": "Mists of Tirna Scithe",
+      "abbrev": "MoTS",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "ardenweald"
@@ -10,6 +11,7 @@
     {
       "id": 376,
       "name": "The Necrotic Wake",
+      "abbrev": "NW",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "bastion"
@@ -17,6 +19,7 @@
     {
       "id": 377,
       "name": "De Other Side",
+      "abbrev": "DOS",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "de-other-side"
@@ -24,6 +27,7 @@
     {
       "id": 378,
       "name": "Halls of Atonement",
+      "abbrev": "HoA",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "revendreth"
@@ -31,6 +35,7 @@
     {
       "id": 379,
       "name": "Plaguefall",
+      "abbrev": "PF",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "maldraxxus"
@@ -38,6 +43,7 @@
     {
       "id": 380,
       "name": "Sanguine Depths",
+      "abbrev": "SD",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "revendreth"
@@ -45,6 +51,7 @@
     {
       "id": 381,
       "name": "Spires of Ascension",
+      "abbrev": "SoA",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "bastion"
@@ -52,6 +59,7 @@
     {
       "id": 382,
       "name": "Theater of Pain",
+      "abbrev": "ToP",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "maldraxxus"
@@ -59,6 +67,7 @@
     {
       "id": 391,
       "name": "Tazavesh: Streets of Wonder",
+      "abbrev": "TazS",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "tazavesh-the-veiled-market"
@@ -66,6 +75,7 @@
     {
       "id": 392,
       "name": "Tazavesh: So'leah's Gambit",
+      "abbrev": "TazG",
       "era": "shadowlands",
       "offWorld": true,
       "zone": "tazavesh-the-veiled-market"
@@ -73,6 +83,7 @@
     {
       "id": 169,
       "name": "Iron Docks",
+      "abbrev": "IRD",
       "era": "wod",
       "offWorld": true,
       "zone": "iron-docks"
@@ -80,6 +91,7 @@
     {
       "id": 166,
       "name": "Grimrail Depot",
+      "abbrev": "GRD",
       "era": "wod",
       "offWorld": true,
       "zone": "grimrail-depot"
@@ -87,6 +99,7 @@
     {
       "id": 234,
       "name": "Return to Karazhan: Upper",
+      "abbrev": "RKU",
       "era": "legion",
       "offWorld": false,
       "zone": "deadwind-pass"
@@ -94,6 +107,7 @@
     {
       "id": 227,
       "name": "Return to Karazhan: Lower",
+      "abbrev": "RKL",
       "era": "legion",
       "offWorld": false,
       "zone": "deadwind-pass"
@@ -101,6 +115,7 @@
     {
       "id": 369,
       "name": "Operation: Mechagon - Junkyard",
+      "abbrev": "OJY",
       "era": "bfa",
       "offWorld": true,
       "zone": "operation-mechagon"
@@ -108,6 +123,7 @@
     {
       "id": 370,
       "name": "Operation: Mechagon - Workshop",
+      "abbrev": "OWS",
       "era": "bfa",
       "offWorld": true,
       "zone": "operation-mechagon"
@@ -115,6 +131,7 @@
     {
       "id": 206,
       "name": "Neltharion's Lair",
+      "abbrev": "NL",
       "era": "legion",
       "offWorld": false,
       "zone": "highmountain"
@@ -122,6 +139,7 @@
     {
       "id": 251,
       "name": "The Underrot",
+      "abbrev": "UNDR",
       "era": "bfa",
       "offWorld": false,
       "zone": "nazmir"
@@ -129,6 +147,7 @@
     {
       "id": 245,
       "name": "Freehold",
+      "abbrev": "FH",
       "era": "bfa",
       "offWorld": false,
       "zone": "tiragarde-sound"
@@ -136,6 +155,7 @@
     {
       "id": 403,
       "name": "Uldaman: Legacy of Tyr",
+      "abbrev": "ULD",
       "era": "dragonflight",
       "offWorld": false,
       "zone": "badlands"
@@ -143,6 +163,7 @@
     {
       "id": 404,
       "name": "Neltharus",
+      "abbrev": "NTH",
       "era": "dragonflight",
       "offWorld": false,
       "zone": "forbidden-reach"
@@ -150,6 +171,7 @@
     {
       "id": 405,
       "name": "Brackenhide Hollow",
+      "abbrev": "BHH",
       "era": "dragonflight",
       "offWorld": false,
       "zone": "azure-span"
@@ -157,6 +179,7 @@
     {
       "id": 406,
       "name": "Halls of Infusion",
+      "abbrev": "HoI",
       "era": "dragonflight",
       "offWorld": false,
       "zone": "thaldraszus"
@@ -164,6 +187,7 @@
     {
       "id": 438,
       "name": "The Vortex Pinnacle",
+      "abbrev": "VP",
       "era": "cataclysm",
       "offWorld": false,
       "zone": "uldum"
@@ -171,6 +195,7 @@
     {
       "id": 168,
       "name": "The Everbloom",
+      "abbrev": "EVB",
       "era": "wod",
       "offWorld": true,
       "zone": "the-everbloom"
@@ -178,6 +203,7 @@
     {
       "id": 198,
       "name": "Darkheart Thicket",
+      "abbrev": "DHT",
       "era": "legion",
       "offWorld": false,
       "zone": "val-sharah"
@@ -185,6 +211,7 @@
     {
       "id": 199,
       "name": "Black Rook Hold",
+      "abbrev": "BRH",
       "era": "legion",
       "offWorld": false,
       "zone": "val-sharah"
@@ -192,6 +219,7 @@
     {
       "id": 248,
       "name": "Waycrest Manor",
+      "abbrev": "WCM",
       "era": "bfa",
       "offWorld": false,
       "zone": "drustvar"
@@ -199,6 +227,7 @@
     {
       "id": 244,
       "name": "Atal'Dazar",
+      "abbrev": "ADZ",
       "era": "bfa",
       "offWorld": false,
       "zone": "zuldazar"
@@ -206,6 +235,7 @@
     {
       "id": 463,
       "name": "Dawn of the Infinite: Galakrond's Fall",
+      "abbrev": "DTIG",
       "era": "dragonflight",
       "offWorld": true,
       "zone": "dawn-of-the-infinite"
@@ -213,6 +243,7 @@
     {
       "id": 464,
       "name": "Dawn of the Infinite: Murozond's Rise",
+      "abbrev": "DTIM",
       "era": "dragonflight",
       "offWorld": true,
       "zone": "dawn-of-the-infinite"
@@ -220,6 +251,7 @@
     {
       "id": 456,
       "name": "Throne of the Tides",
+      "abbrev": "TotT",
       "era": "cataclysm",
       "offWorld": false,
       "zone": "vashj-ir"
@@ -227,6 +259,7 @@
     {
       "id": 399,
       "name": "Ruby Life Pools",
+      "abbrev": "RLP",
       "era": "dragonflight",
       "offWorld": false,
       "zone": "waking-shores"
@@ -234,6 +267,7 @@
     {
       "id": 400,
       "name": "The Nokhud Offensive",
+      "abbrev": "NOK",
       "era": "dragonflight",
       "offWorld": false,
       "zone": "ohnahran-plains"
@@ -241,6 +275,7 @@
     {
       "id": 401,
       "name": "The Azure Vault",
+      "abbrev": "AV",
       "era": "dragonflight",
       "offWorld": false,
       "zone": "azure-span"
@@ -248,6 +283,7 @@
     {
       "id": 402,
       "name": "Algeth'ar Academy",
+      "abbrev": "AlAc",
       "era": "dragonflight",
       "offWorld": false,
       "zone": "thaldraszus"
@@ -255,6 +291,7 @@
     {
       "id": 353,
       "name": "Siege of Boralus",
+      "abbrev": "SotB",
       "era": "bfa",
       "offWorld": false,
       "zone": "tiragarde-sound"
@@ -262,6 +299,7 @@
     {
       "id": 501,
       "name": "The Stonevault",
+      "abbrev": "StV",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -269,6 +307,7 @@
     {
       "id": 502,
       "name": "City of Threads",
+      "abbrev": "CoT",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -276,6 +315,7 @@
     {
       "id": 503,
       "name": "Ara-Kara, City of Echoes",
+      "abbrev": "ArK",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -283,6 +323,7 @@
     {
       "id": 505,
       "name": "The Dawnbreaker",
+      "abbrev": "DWN",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -290,6 +331,7 @@
     {
       "id": 507,
       "name": "Grim Batol",
+      "abbrev": "GB",
       "era": "cataclysm",
       "offWorld": false,
       "zone": "twilight-highlands"
@@ -297,6 +339,7 @@
     {
       "id": 247,
       "name": "The MOTHERLODE!!",
+      "abbrev": "MTHL",
       "era": "bfa",
       "offWorld": false,
       "zone": "kezan"
@@ -304,6 +347,7 @@
     {
       "id": 525,
       "name": "Operation: Floodgate",
+      "abbrev": "FLG",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -311,6 +355,7 @@
     {
       "id": 499,
       "name": "Priory of the Sacred Flame",
+      "abbrev": "PSF",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -318,6 +363,7 @@
     {
       "id": 500,
       "name": "The Rookery",
+      "abbrev": "RKY",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -325,6 +371,7 @@
     {
       "id": 504,
       "name": "Darkflame Cleft",
+      "abbrev": "DfC",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -332,6 +379,7 @@
     {
       "id": 506,
       "name": "Cinderbrew Meadery",
+      "abbrev": "CBM",
       "era": "tww",
       "offWorld": false,
       "zone": "khaz-algar"
@@ -339,6 +387,7 @@
     {
       "id": 542,
       "name": "Eco-Dome Al'dani",
+      "abbrev": "EDA",
       "era": "tww",
       "offWorld": true,
       "zone": "ecodome-aldani"
