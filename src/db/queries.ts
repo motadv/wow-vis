@@ -18,6 +18,20 @@ export async function getSeasonRankMatrix(
   }));
 }
 
+export async function getGlobalKeyRange(
+  conn: AsyncDuckDBConnection,
+  seasonIds: number[],
+): Promise<{ minKey: number; maxKey: number }> {
+  const unions = seasonIds
+    .map(id => `SELECT MEDIAN(keystone_level) AS wm FROM leaderboard_${id} GROUP BY dungeon_id, period`)
+    .join(' UNION ALL ');
+  const result = await conn.query(
+    `SELECT MIN(wm) AS min_key, MAX(wm) AS max_key FROM (${unions})`,
+  );
+  const row = result.toArray()[0];
+  return { minKey: Number(row.min_key), maxKey: Number(row.max_key) };
+}
+
 export async function getWeeklyArc(
   conn: AsyncDuckDBConnection,
   dungeonId: number,
