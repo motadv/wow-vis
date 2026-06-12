@@ -29,7 +29,6 @@ scripts/**/*.js
 scripts/**/*.js.map
 scripts/**/*.d.ts
 
-docs/superpowers
 .superpowers
 CLAUDE.md
 .claude
