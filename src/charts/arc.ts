@@ -2,12 +2,12 @@ import * as d3 from 'd3';
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import { getWeeklyArc } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
-import { getState, setState, subscribe } from '../state.js';
+import { getState, subscribe } from '../state.js';
 import type { DungeonManifest, SeasonMeta, WeeklyArcRow } from '../types.js';
 
 type ArcEntry = { season: SeasonMeta; rows: WeeklyArcRow[]; colorIndex: number };
 
-const MARGIN = { top: 20, right: 140, bottom: 36, left: 44 };
+const MARGIN = { top: 20, right: 60, bottom: 50, left: 44 };
 
 let keyDomain: [number, number] = [0, 40];
 
@@ -62,7 +62,7 @@ export function initArc(
   });
 }
 
-const TITLE_H = 32;
+const TITLE_H = 48;
 
 function renderArc(
   container: HTMLElement,
@@ -71,24 +71,28 @@ function renderArc(
   emphasizedSeasonId: number | null,
 ): void {
   container.replaceChildren();
-
   if (arcs.length === 0 || arcs.every(a => a.rows.length === 0)) return;
+
+  container.style.position = 'relative';
 
   const titleEl = document.createElement('div');
   titleEl.style.cssText =
-    'padding:6px 12px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#71717a';
-  titleEl.textContent = `${title} — Weekly Key Progression`;
+    'padding:14px 16px 0;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#e4e4e7';
+  titleEl.textContent = `${title} — Median Key Level per Week`;
   container.appendChild(titleEl);
 
   const colors = d3.schemeTableau10 as readonly string[];
-
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
   const height = container.clientHeight - MARGIN.top - MARGIN.bottom - TITLE_H;
-
   const maxPeriods = Math.max(...arcs.map(a => a.rows.length));
 
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
   const yScale = d3.scaleLinear().domain(keyDomain).range([height, 0]);
+
+  const line = d3.line<WeeklyArcRow>()
+    .x(r => xScale(r.period_index))
+    .y(r => yScale(r.median_key))
+    .curve(d3.curveMonotoneX);
 
   const svg = d3.select(container)
     .append('svg')
@@ -98,7 +102,20 @@ function renderArc(
 
   const g = svg.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-  // Axes
+  drawAxes(g, xScale, yScale, height, width);
+  drawLines(g, arcs, xScale, yScale, height, emphasizedSeasonId, colors, line);
+  drawTooltip(g, arcs, xScale, width, height, emphasizedSeasonId, colors, container);
+}
+
+function drawAxes(
+  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  height: number,
+  width: number,
+): void {
+  const maxPeriods = Math.round(xScale.domain()[1]);
+
   g.append('g')
     .attr('transform', `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(Math.min(maxPeriods, 10)).tickFormat(d => `W${d}`))
@@ -112,7 +129,6 @@ function renderArc(
     .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', 10))
     .call(ax => ax.selectAll('line').attr('stroke', '#3f3f46'));
 
-  // Y axis label
   g.append('text')
     .attr('transform', 'rotate(-90)')
     .attr('x', -height / 2)
@@ -122,12 +138,20 @@ function renderArc(
     .attr('fill', '#71717a')
     .text('Median Key');
 
-  // Arc lines
-  const line = d3.line<WeeklyArcRow>()
-    .x(r => xScale(r.period_index))
-    .y(r => yScale(r.median_key))
-    .curve(d3.curveMonotoneX);
+  // width used in Task 2
+  void width;
+}
 
+function drawLines(
+  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  arcs: ArcEntry[],
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  height: number,
+  emphasizedSeasonId: number | null,
+  colors: readonly string[],
+  line: d3.Line<WeeklyArcRow>,
+): void {
   for (const { season, rows, colorIndex } of arcs) {
     if (rows.length === 0) continue;
     const emphasized = emphasizedSeasonId === null || season.id === emphasizedSeasonId;
@@ -138,31 +162,20 @@ function renderArc(
       .attr('stroke-width', emphasized ? 2.5 : 1.5)
       .attr('opacity', emphasized ? 1 : 0.3)
       .attr('d', line);
+
+    // xScale, yScale, height, season used in Task 3
+    void xScale; void yScale; void height; void season;
   }
-
-  // Legend
-  const legendG = svg.append('g')
-    .attr('transform', `translate(${MARGIN.left + width + 8},${MARGIN.top})`);
-
-  arcs.forEach(({ season, colorIndex }, i) => {
-    const label = season.name.replace('Mythic+ Dungeons (', '').replace(')', '');
-    const row = legendG.append('g')
-      .attr('transform', `translate(0,${i * 18})`)
-      .style('cursor', 'pointer')
-      .on('click', () => setState({ selectedSeasonForArc: season.id }));
-
-    row.append('circle')
-      .attr('r', 5)
-      .attr('cx', 5)
-      .attr('cy', 0)
-      .attr('fill', colors[colorIndex % colors.length])
-      .attr('opacity', emphasizedSeasonId === null || season.id === emphasizedSeasonId ? 1 : 0.4);
-
-    row.append('text')
-      .attr('x', 14)
-      .attr('y', 4)
-      .attr('font-size', 10)
-      .attr('fill', emphasizedSeasonId === null || season.id === emphasizedSeasonId ? '#e4e4e7' : '#71717a')
-      .text(label);
-  });
 }
+
+function drawTooltip(
+  _g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  _arcs: ArcEntry[],
+  _xScale: d3.ScaleLinear<number, number>,
+  _width: number,
+  _height: number,
+  _emphasizedSeasonId: number | null,
+  _colors: readonly string[],
+  _container: HTMLElement,
+): void {}
+
