@@ -16,7 +16,7 @@ html, body {
 }
 
 #heatmap {
-  flex: 1.4;
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   background: #18181b;
@@ -33,26 +33,49 @@ html, body {
   display: none;
 }
 
-/* --- Swimlane heatmap --- */
+/* --- Swimlane rank chart --- */
 
 .heatmap-title {
-  padding: 10px 12px 6px;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 14px 16px 2px;
+  font-size: 15px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #71717a;
+  letter-spacing: 0.06em;
+  color: #e4e4e7;
+}
+
+.heatmap-subtitle {
+  padding: 4px 16px 10px;
+  font-size: 11px;
+  color: #52525b;
 }
 
 .heatmap-lanes {
   padding: 0 12px;
 }
 
+.expansion-header {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #52525b;
+  padding: 14px 0 4px;
+  border-top: 1px solid #27272a;
+  margin-top: 8px;
+}
+
+.expansion-header--first {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 4px;
+}
+
 .lane {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .lane--faded .tile {
@@ -60,9 +83,9 @@ html, body {
 }
 
 .lane-label {
-  font-size: 9px;
-  color: #52525b;
-  width: 40px;
+  font-size: 11px;
+  color: #71717a;
+  width: 68px;
   text-align: right;
   flex-shrink: 0;
   white-space: nowrap;
@@ -70,18 +93,18 @@ html, body {
 
 .lane-tiles {
   display: flex;
-  gap: 3px;
+  gap: 5px;
 }
 
 .tile {
   position: relative;
-  width: 38px;
-  height: 22px;
-  border-radius: 3px;
+  width: 62px;
+  height: 36px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8.5px;
+  font-size: 11px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
@@ -102,19 +125,19 @@ html, body {
 .tile-tooltip {
   display: none;
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
   background: #27272a;
   border: 1px solid #3f3f46;
-  border-radius: 6px;
-  padding: 7px 10px;
-  font-size: 11px;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 10;
   color: #f4f4f5;
-  line-height: 1.5;
+  line-height: 1.8;
 }
 
 .tile:hover .tile-tooltip {
@@ -124,23 +147,23 @@ html, body {
 .heatmap-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 12px 12px;
-  margin-top: 6px;
+  gap: 16px;
+  padding: 14px 16px 16px;
+  margin-top: 8px;
   border-top: 1px solid #27272a;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 9px;
-  color: #71717a;
+  gap: 8px;
+  font-size: 13px;
+  color: #a1a1aa;
 }
 
 .legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
   flex-shrink: 0;
 }
