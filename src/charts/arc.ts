@@ -116,17 +116,27 @@ function drawAxes(
 ): void {
   const maxPeriods = Math.round(xScale.domain()[1]);
 
+  // Horizontal grid lines — drawn first so they appear behind everything
+  yScale.ticks(5).forEach(tick => {
+    g.append('line')
+      .attr('x1', 0).attr('x2', width)
+      .attr('y1', yScale(tick)).attr('y2', yScale(tick))
+      .attr('stroke', '#27272a')
+      .attr('stroke-width', 1)
+      .style('pointer-events', 'none');
+  });
+
   g.append('g')
     .attr('transform', `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(Math.min(maxPeriods, 10)).tickFormat(d => `W${d}`))
     .call(ax => ax.select('.domain').attr('stroke', '#3f3f46'))
-    .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', 10))
+    .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', 12))
     .call(ax => ax.selectAll('line').attr('stroke', '#3f3f46'));
 
   g.append('g')
     .call(d3.axisLeft(yScale).ticks(5))
     .call(ax => ax.select('.domain').attr('stroke', '#3f3f46'))
-    .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', 10))
+    .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', 12))
     .call(ax => ax.selectAll('line').attr('stroke', '#3f3f46'));
 
   g.append('text')
@@ -134,12 +144,17 @@ function drawAxes(
     .attr('x', -height / 2)
     .attr('y', -34)
     .attr('text-anchor', 'middle')
-    .attr('font-size', 10)
+    .attr('font-size', 12)
     .attr('fill', '#71717a')
     .text('Median Key');
 
-  // width used in Task 2
-  void width;
+  g.append('text')
+    .attr('x', width / 2)
+    .attr('y', height + 38)
+    .attr('text-anchor', 'middle')
+    .attr('font-size', 12)
+    .attr('fill', '#71717a')
+    .text('Week of Season');
 }
 
 function drawLines(
