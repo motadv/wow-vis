@@ -234,15 +234,82 @@ function drawLines(
 }
 
 function drawTooltip(
-  _g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  _arcs: ArcEntry[],
-  _xScale: d3.ScaleLinear<number, number>,
-  _width: number,
-  _height: number,
-  _emphasizedSeasonId: number | null,
-  _colors: readonly string[],
-  _container: HTMLElement,
-): void {}
+  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  arcs: ArcEntry[],
+  xScale: d3.ScaleLinear<number, number>,
+  width: number,
+  height: number,
+  emphasizedSeasonId: number | null,
+  colors: readonly string[],
+  container: HTMLElement,
+): void {
+  const activeArc =
+    emphasizedSeasonId !== null
+      ? (arcs.find(a => a.season.id === emphasizedSeasonId) ??
+         arcs.reduce((best, a) => (a.rows.length > best.rows.length ? a : best)))
+      : arcs.reduce((best, a) => (a.rows.length > best.rows.length ? a : best));
+
+  if (!activeArc || activeArc.rows.length === 0) return;
+
+  const color = colors[activeArc.colorIndex % colors.length];
+  const seasonLabel = activeArc.season.name
+    .replace('Mythic+ Dungeons (', '')
+    .replace(')', '');
+  const bisect = d3.bisector<WeeklyArcRow, number>(r => r.period_index).center;
+
+  const tooltipEl = document.createElement('div');
+  tooltipEl.style.cssText =
+    'position:absolute;background:#1c1c1f;border:1px solid #52525b;border-radius:6px;' +
+    'padding:10px 13px;font-size:12px;color:#e4e4e7;line-height:1.7;' +
+    'box-shadow:0 4px 16px rgba(0,0,0,0.5);pointer-events:none;display:none;' +
+    'font-family:sans-serif;white-space:nowrap';
+  container.appendChild(tooltipEl);
+
+  g.append('rect')
+    .attr('width', width)
+    .attr('height', height)
+    .attr('fill', 'none')
+    .style('pointer-events', 'all')
+    .on('mousemove', (event: MouseEvent) => {
+      const [mx] = d3.pointer(event);
+      const idx = bisect(activeArc.rows, xScale.invert(mx));
+      const row = activeArc.rows[Math.max(0, Math.min(idx, activeArc.rows.length - 1))];
+      if (!row) return;
+
+      const svgX = MARGIN.left + xScale(row.period_index);
+      const cardW = 150;
+      const left =
+        svgX + cardW + 16 > container.clientWidth ? svgX - cardW - 12 : svgX + 12;
+
+      tooltipEl.style.display = 'block';
+      tooltipEl.style.left = `${left}px`;
+      tooltipEl.style.top = `${TITLE_H + MARGIN.top + 4}px`;
+
+      const weekEl = document.createElement('div');
+      weekEl.style.cssText =
+        'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#71717a';
+      weekEl.textContent = `Week ${row.period_index}`;
+
+      const keyEl = document.createElement('div');
+      keyEl.style.cssText = `font-size:16px;font-weight:700;color:${color}`;
+      keyEl.textContent = `+${row.median_key.toFixed(1)}`;
+
+      const nameEl = document.createElement('div');
+      nameEl.style.cssText = 'font-size:11px;color:#a1a1aa;display:flex;align-items:center;gap:5px';
+      const dot = document.createElement('span');
+      dot.style.cssText =
+        `width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0`;
+      const label = document.createElement('span');
+      label.textContent = seasonLabel;
+      nameEl.appendChild(dot);
+      nameEl.appendChild(label);
+
+      tooltipEl.replaceChildren(weekEl, keyEl, nameEl);
+    })
+    .on('mouseleave', () => {
+      tooltipEl.style.display = 'none';
+    });
+}
 
 function seasonAbbrev(season: SeasonMeta): string {
   const m = season.name.match(/\((.+?) Season (\d+)\)/);
