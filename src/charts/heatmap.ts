@@ -3,6 +3,7 @@ import { ERA_PALETTE, ERA_LABELS, ERAS_IN_ORDER } from '../config.js';
 import { getSeasonRankMatrix } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
 import { computeRanks } from '../utils/ranks.js';
+import { expansionName, seasonLabel } from '../utils/seasons.js';
 import { setState, subscribe } from '../state.js';
 import type { DungeonManifest, RankMatrixRow, SeasonMeta } from '../types.js';
 
@@ -10,7 +11,7 @@ export async function initHeatmap(
   container: HTMLElement,
   manifest: DungeonManifest,
   conn: AsyncDuckDBConnection,
-): Promise<{ minKey: number; maxKey: number }> {
+): Promise<void> {
   const seasons = manifest.seasons
     .filter((s) => s.dungeonIds.length > 0)
     .sort((a, b) => a.id - b.id);
@@ -39,63 +40,86 @@ export async function initHeatmap(
 
   const titleEl = document.createElement('div');
   titleEl.className = 'heatmap-title';
-  titleEl.textContent = 'Dungeon Key Rank by Season';
+  titleEl.textContent = 'Dungeon Rankings by Season';
   container.appendChild(titleEl);
+
+  const subtitleEl = document.createElement('div');
+  subtitleEl.className = 'heatmap-subtitle';
+  subtitleEl.textContent = 'Oldest season at top · Left tile = highest median key level';
+  container.appendChild(subtitleEl);
 
   const lanesEl = document.createElement('div');
   lanesEl.className = 'heatmap-lanes';
   container.appendChild(lanesEl);
 
+  const grouped = new Map<string, SeasonMeta[]>();
   for (const season of seasons) {
-    const entries = bySeason.get(season.id) ?? [];
+    const exp = expansionName(season);
+    if (exp === null) continue;
+    if (!grouped.has(exp)) grouped.set(exp, []);
+    grouped.get(exp)!.push(season);
+  }
 
-    const lane = document.createElement('div');
-    lane.className = 'lane';
-    lane.dataset.seasonId = String(season.id);
+  let firstGroup = true;
+  for (const [expansion, expSeasons] of grouped) {
+    const headerEl = document.createElement('div');
+    headerEl.className = firstGroup
+      ? 'expansion-header expansion-header--first'
+      : 'expansion-header';
+    headerEl.textContent = expansion;
+    lanesEl.appendChild(headerEl);
+    firstGroup = false;
 
-    const labelEl = document.createElement('div');
-    labelEl.className = 'lane-label';
-    labelEl.textContent = seasonAbbrev(season);
-    lane.appendChild(labelEl);
+    for (const season of expSeasons) {
+      const entries = bySeason.get(season.id) ?? [];
 
-    const tilesEl = document.createElement('div');
-    tilesEl.className = 'lane-tiles';
+      const lane = document.createElement('div');
+      lane.className = 'lane';
+      lane.dataset.seasonId = String(season.id);
 
-    for (const r of entries) {
-      const dungeon = manifest.dungeons.find((d) => d.id === r.dungeon_id);
-      if (!dungeon) continue;
+      const labelEl = document.createElement('div');
+      labelEl.className = 'lane-label';
+      labelEl.textContent = seasonLabel(season);
+      lane.appendChild(labelEl);
 
-      const tile = document.createElement('div');
-      tile.className = 'tile';
-      tile.dataset.dungeonId = String(dungeon.id);
-      tile.style.background = ERA_PALETTE[dungeon.era];
-      tile.textContent = dungeon.abbrev;
+      const tilesEl = document.createElement('div');
+      tilesEl.className = 'lane-tiles';
 
-      const tooltip = document.createElement('div');
-      tooltip.className = 'tile-tooltip';
-      const seasonShort = season.name.replace('Mythic+ Dungeons (', '').replace(')', '');
-      const nameStrong = document.createElement('strong');
-      nameStrong.textContent = dungeon.name;
-      tooltip.appendChild(nameStrong);
-      tooltip.appendChild(document.createElement('br'));
-      tooltip.appendChild(document.createTextNode(seasonShort));
-      tooltip.appendChild(document.createElement('br'));
-      tooltip.appendChild(document.createTextNode(`Median key: +${r.median_key.toFixed(1)}`));
-      tooltip.appendChild(document.createElement('br'));
-      tooltip.appendChild(document.createTextNode(`Rank ${r.rank} of ${r.total}`));
-      tile.appendChild(tooltip);
+      for (const r of entries) {
+        const dungeon = manifest.dungeons.find((d) => d.id === r.dungeon_id);
+        if (!dungeon) continue;
 
-      tile.addEventListener('mouseenter', () => applyHighlight(dungeon.id));
-      tile.addEventListener('mouseleave', clearHighlight);
-      tile.addEventListener('click', () =>
-        setState({ selectedDungeon: dungeon.id, selectedSeasonForArc: season.id }),
-      );
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.dataset.dungeonId = String(dungeon.id);
+        tile.style.background = ERA_PALETTE[dungeon.era];
+        tile.textContent = dungeon.abbrev;
 
-      tilesEl.appendChild(tile);
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tile-tooltip';
+        const nameStrong = document.createElement('strong');
+        nameStrong.textContent = dungeon.name;
+        tooltip.appendChild(nameStrong);
+        tooltip.appendChild(document.createElement('br'));
+        tooltip.appendChild(document.createTextNode(`${expansion} · ${seasonLabel(season)}`));
+        tooltip.appendChild(document.createElement('br'));
+        tooltip.appendChild(document.createTextNode(`Median key: +${r.median_key.toFixed(1)}`));
+        tooltip.appendChild(document.createElement('br'));
+        tooltip.appendChild(document.createTextNode(`Rank ${r.rank} of ${r.total}`));
+        tile.appendChild(tooltip);
+
+        tile.addEventListener('mouseenter', () => applyHighlight(dungeon.id));
+        tile.addEventListener('mouseleave', clearHighlight);
+        tile.addEventListener('click', () =>
+          setState({ selectedDungeon: dungeon.id, selectedSeasonForArc: season.id }),
+        );
+
+        tilesEl.appendChild(tile);
+      }
+
+      lane.appendChild(tilesEl);
+      lanesEl.appendChild(lane);
     }
-
-    lane.appendChild(tilesEl);
-    lanesEl.appendChild(lane);
   }
 
   // Era legend (only eras present in the manifest, in canonical order)
@@ -144,20 +168,4 @@ export async function initHeatmap(
     container.querySelectorAll('.tile').forEach((t) => t.classList.remove('tile--highlighted'));
   }
 
-  const allKeys = rawRows.map((r) => r.median_key);
-  return {
-    minKey: Math.floor(Math.min(...allKeys)),
-    maxKey: Math.ceil(Math.max(...allKeys)),
-  };
-}
-
-function seasonAbbrev(season: SeasonMeta): string {
-  const m = season.name.match(/\((.+?) Season (\d+)\)/);
-  if (!m) return `S${season.id}`;
-  const expansions: Record<string, string> = {
-    Shadowlands: 'SL',
-    Dragonflight: 'DF',
-    'The War Within': 'TWW',
-  };
-  return `${expansions[m[1]] ?? m[1]} S${m[2]}`;
 }
