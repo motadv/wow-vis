@@ -170,16 +170,66 @@ function drawLines(
   for (const { season, rows, colorIndex } of arcs) {
     if (rows.length === 0) continue;
     const emphasized = emphasizedSeasonId === null || season.id === emphasizedSeasonId;
+    const color = colors[colorIndex % colors.length];
+
     g.append('path')
       .datum(rows)
       .attr('fill', 'none')
-      .attr('stroke', colors[colorIndex % colors.length])
+      .attr('stroke', color)
       .attr('stroke-width', emphasized ? 2.5 : 1.5)
       .attr('opacity', emphasized ? 1 : 0.3)
       .attr('d', line);
 
-    // xScale, yScale, height, season used in Task 3
-    void xScale; void yScale; void height; void season;
+    for (const row of rows) {
+      g.append('circle')
+        .attr('cx', xScale(row.period_index))
+        .attr('cy', yScale(row.median_key))
+        .attr('r', 3)
+        .attr('fill', color)
+        .attr('opacity', emphasized ? 1 : 0.3)
+        .style('pointer-events', 'none');
+    }
+
+    const lastRow = rows[rows.length - 1];
+    const endX = xScale(lastRow.period_index);
+
+    g.append('line')
+      .attr('x1', endX).attr('x2', endX)
+      .attr('y1', 0).attr('y2', height)
+      .attr('stroke', color)
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '4,3')
+      .attr('opacity', 0.7)
+      .style('pointer-events', 'none');
+
+    g.append('text')
+      .attr('x', endX + 4)
+      .attr('y', yScale(lastRow.median_key))
+      .attr('font-size', 11)
+      .attr('fill', color)
+      .attr('dominant-baseline', 'middle')
+      .attr('opacity', emphasized ? 1 : 0.5)
+      .style('pointer-events', 'none')
+      .text(seasonAbbrev(season));
+  }
+
+  if (emphasizedSeasonId !== null) {
+    const emphArc = arcs.find(a => a.season.id === emphasizedSeasonId);
+    if (emphArc && emphArc.rows.length > 0) {
+      const peak = emphArc.rows.reduce((best, r) =>
+        r.median_key > best.median_key ? r : best,
+      );
+      const color = colors[emphArc.colorIndex % colors.length];
+      g.append('text')
+        .attr('x', xScale(peak.period_index))
+        .attr('y', yScale(peak.median_key) - 14)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', 11)
+        .attr('font-weight', '700')
+        .attr('fill', color)
+        .style('pointer-events', 'none')
+        .text(`▲ +${peak.median_key.toFixed(1)}`);
+    }
   }
 }
 
@@ -193,4 +243,15 @@ function drawTooltip(
   _colors: readonly string[],
   _container: HTMLElement,
 ): void {}
+
+function seasonAbbrev(season: SeasonMeta): string {
+  const m = season.name.match(/\((.+?) Season (\d+)\)/);
+  if (!m) return `S${season.id}`;
+  const expansions: Record<string, string> = {
+    Shadowlands: 'SL',
+    Dragonflight: 'DF',
+    'The War Within': 'TWW',
+  };
+  return `${expansions[m[1]] ?? m[1]} S${m[2]}`;
+}
 
