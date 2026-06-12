@@ -174,6 +174,7 @@ function drawLines(
 
     g.append('path')
       .datum(rows)
+      .attr('data-season-id', String(season.id))
       .attr('fill', 'none')
       .attr('stroke', color)
       .attr('stroke-width', emphasized ? 2.5 : 1.5)
@@ -266,6 +267,42 @@ function drawTooltip(
     'font-family:sans-serif;white-space:nowrap';
   container.appendChild(tooltipEl);
 
+  let lastHoveredId: number | null = null;
+
+  function nearestArc(mx: number, my: number): ArcEntry {
+    const week = xScale.invert(mx);
+    let nearest = arcs[0];
+    let minDist = Infinity;
+    for (const arc of arcs) {
+      if (arc.rows.length === 0) continue;
+      const idx = bisect(arc.rows, week);
+      const row = arc.rows[Math.max(0, Math.min(idx, arc.rows.length - 1))];
+      const dist = Math.abs(yScale(row.median_key) - my);
+      if (dist < minDist) { minDist = dist; nearest = arc; }
+    }
+    return nearest;
+  }
+
+  function updatePathStyles(hoveredSeasonId: number | null): void {
+    g.selectAll<SVGPathElement, unknown>('path[data-season-id]').each(function () {
+      const sid = Number(this.dataset.seasonId);
+      const isEmphasized = emphasizedSeasonId === null || sid === emphasizedSeasonId;
+      const isHovered = sid === hoveredSeasonId;
+      let sw: number, op: number;
+      if (emphasizedSeasonId === null) {
+        sw = 2.5;
+        op = isHovered || hoveredSeasonId === null ? 1.0 : 0.5;
+      } else if (isEmphasized) {
+        sw = 2.5; op = 1.0;
+      } else if (isHovered) {
+        sw = 2.0; op = 0.65;
+      } else {
+        sw = 1.5; op = 0.3;
+      }
+      d3.select(this).attr('stroke-width', sw).attr('opacity', op);
+    });
+  }
+
   g.append('rect')
     .attr('width', width)
     .attr('height', height)
@@ -274,21 +311,15 @@ function drawTooltip(
     .style('cursor', 'pointer')
     .on('click', (event: MouseEvent) => {
       const [mx, my] = d3.pointer(event);
-      const week = xScale.invert(mx);
-      const clickBisect = d3.bisector<WeeklyArcRow, number>(r => r.period_index).center;
-      let nearest = arcs[0];
-      let minDist = Infinity;
-      for (const arc of arcs) {
-        if (arc.rows.length === 0) continue;
-        const idx = clickBisect(arc.rows, week);
-        const row = arc.rows[Math.max(0, Math.min(idx, arc.rows.length - 1))];
-        const dist = Math.abs(yScale(row.median_key) - my);
-        if (dist < minDist) { minDist = dist; nearest = arc; }
-      }
-      setState({ selectedSeasonForArc: nearest.season.id });
+      setState({ selectedSeasonForArc: nearestArc(mx, my).season.id });
     })
     .on('mousemove', (event: MouseEvent) => {
       const [mx, my] = d3.pointer(event);
+      const hovered = nearestArc(mx, my);
+      if (hovered.season.id !== lastHoveredId) {
+        lastHoveredId = hovered.season.id;
+        updatePathStyles(lastHoveredId);
+      }
       const idx = bisect(activeArc.rows, xScale.invert(mx));
       const row = activeArc.rows[Math.max(0, Math.min(idx, activeArc.rows.length - 1))];
       if (!row) return;
@@ -329,6 +360,8 @@ function drawTooltip(
     })
     .on('mouseleave', () => {
       tooltipEl.style.display = 'none';
+      lastHoveredId = null;
+      updatePathStyles(null);
     });
 }
 
