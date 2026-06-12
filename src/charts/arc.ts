@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import { getWeeklyArc } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
-import { getState, subscribe } from '../state.js';
+import { getState, setState, subscribe } from '../state.js';
 import type { DungeonManifest, SeasonMeta, WeeklyArcRow } from '../types.js';
 
 type ArcEntry = { season: SeasonMeta; rows: WeeklyArcRow[]; colorIndex: number };
@@ -104,7 +104,7 @@ function renderArc(
 
   drawAxes(g, xScale, yScale, height, width);
   drawLines(g, arcs, xScale, yScale, height, emphasizedSeasonId, colors, line);
-  drawTooltip(g, arcs, xScale, width, height, emphasizedSeasonId, colors, container);
+  drawTooltip(g, arcs, xScale, yScale, width, height, emphasizedSeasonId, colors, container);
 }
 
 function drawAxes(
@@ -237,6 +237,7 @@ function drawTooltip(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
   arcs: ArcEntry[],
   xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
   width: number,
   height: number,
   emphasizedSeasonId: number | null,
@@ -270,8 +271,24 @@ function drawTooltip(
     .attr('height', height)
     .attr('fill', 'none')
     .style('pointer-events', 'all')
+    .style('cursor', 'pointer')
+    .on('click', (event: MouseEvent) => {
+      const [mx, my] = d3.pointer(event);
+      const week = xScale.invert(mx);
+      const clickBisect = d3.bisector<WeeklyArcRow, number>(r => r.period_index).center;
+      let nearest = arcs[0];
+      let minDist = Infinity;
+      for (const arc of arcs) {
+        if (arc.rows.length === 0) continue;
+        const idx = clickBisect(arc.rows, week);
+        const row = arc.rows[Math.max(0, Math.min(idx, arc.rows.length - 1))];
+        const dist = Math.abs(yScale(row.median_key) - my);
+        if (dist < minDist) { minDist = dist; nearest = arc; }
+      }
+      setState({ selectedSeasonForArc: nearest.season.id });
+    })
     .on('mousemove', (event: MouseEvent) => {
-      const [mx] = d3.pointer(event);
+      const [mx, my] = d3.pointer(event);
       const idx = bisect(activeArc.rows, xScale.invert(mx));
       const row = activeArc.rows[Math.max(0, Math.min(idx, activeArc.rows.length - 1))];
       if (!row) return;
@@ -281,9 +298,13 @@ function drawTooltip(
       const left =
         svgX + cardW + 16 > container.clientWidth ? svgX - cardW - 12 : svgX + 12;
 
+      const containerY = TITLE_H + MARGIN.top + my;
+      const tooltipH = 90;
+      const top = Math.max(TITLE_H + 4, containerY - tooltipH - 12);
+
       tooltipEl.style.display = 'block';
       tooltipEl.style.left = `${left}px`;
-      tooltipEl.style.top = `${TITLE_H + MARGIN.top + 4}px`;
+      tooltipEl.style.top = `${top}px`;
 
       const weekEl = document.createElement('div');
       weekEl.style.cssText =
