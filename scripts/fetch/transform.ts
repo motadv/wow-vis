@@ -7,7 +7,7 @@ export function transformLeaderboard(
 ): LeaderboardEntry[] {
   const affixes = raw.keystone_affixes ?? [];
   const fortified = affixes.some(affix => affix.keystone_affix.id === 10);
-  return raw.leading_groups.map(group => ({
+  return (raw.leading_groups ?? []).map(group => ({
     dungeon_id: raw.map_challenge_mode_id,
     season_id: seasonId,
     period: raw.period,
