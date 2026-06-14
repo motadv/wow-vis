@@ -5,7 +5,8 @@ export function transformLeaderboard(
   seasonId: number,
   realmId: number,
 ): LeaderboardEntry[] {
-  const fortified = raw.keystone_affixes.some(affix => affix.keystone_affix.id === 10);
+  const affixes = raw.keystone_affixes ?? [];
+  const fortified = affixes.some(affix => affix.keystone_affix.id === 10);
   return raw.leading_groups.map(group => ({
     dungeon_id: raw.map_challenge_mode_id,
     season_id: seasonId,
