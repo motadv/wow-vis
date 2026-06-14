@@ -17,8 +17,8 @@ async function discoverActiveDungeons(
   allDungeonIds: number[],
   periods: number[],
   realmId: number,
-): Promise<{ dungeonIds: number[]; activePeriodId: number | null }> {
-  // Try each period in order; stop as soon as we find one with data.
+): Promise<number[]> {
+  // Try each period in order; stop as soon as we find one with data (for efficiency check)
   for (const periodId of periods) {
     const active: number[] = [];
     for (const dungeonId of allDungeonIds) {
@@ -32,35 +32,10 @@ async function discoverActiveDungeons(
         // dungeon not active in this period/season
       }
     }
-    if (active.length > 0) return { dungeonIds: active, activePeriodId: periodId };
+    if (active.length > 0) return active;
     console.log(`      Period ${periodId} → no active dungeons, trying next...`);
   }
-  return { dungeonIds: [], activePeriodId: null };
-}
-
-async function findOppositePeriod(
-  token: string,
-  allPeriods: number[],
-  testedPeriodId: number,
-  firstAffixId: number,
-  realmId: number,
-  testDungeonId: number,
-): Promise<number | null> {
-  const targetIsFortified = firstAffixId === 10;
-  for (const periodId of allPeriods) {
-    if (periodId === testedPeriodId) continue;
-    await sleep(55);
-    try {
-      const lb = await fetchLeaderboard(token, realmId, testDungeonId, periodId);
-      if (!lb.leading_groups || lb.leading_groups.length === 0) continue;
-      if (!lb.keystone_affixes || lb.keystone_affixes.length === 0) continue;
-      const isFortified = lb.keystone_affixes.some(a => a.keystone_affix.id === 10);
-      if (isFortified !== targetIsFortified) return periodId;
-    } catch {
-      // period not available for this dungeon
-    }
-  }
-  return null;
+  return [];
 }
 
 async function main() {
@@ -98,10 +73,15 @@ async function main() {
     const periods = season.periods.map(p => p.id);
 
     console.log(`  Discovering active dungeons across ${periods.length} periods on realm ${realmIds[0]}...`);
-    const { dungeonIds: activeDungeonIds, activePeriodId } = await discoverActiveDungeons(
+    const activeDungeonIds = await discoverActiveDungeons(
       token, allDungeonIds, periods, realmIds[0],
     );
-    console.log(`  Active dungeons: ${activeDungeonIds.join(', ')} (period ${activePeriodId})`);
+    console.log(`  Active dungeons: ${activeDungeonIds.join(', ')}`);
+
+    if (activeDungeonIds.length === 0) {
+      console.log(`  ⚠️  No active dungeons found; skipping season`);
+      continue;
+    }
 
     for (const dungeonId of activeDungeonIds) {
       if (!dungeonMap.has(dungeonId)) {
@@ -126,62 +106,30 @@ async function main() {
 
     const allEntries: LeaderboardEntry[] = [];
 
-    if (activePeriodId === null) {
-      console.log(`  ⚠️  No active period found across ${periods.length} periods; skipping leaderboard fetch`);
-    } else {
-      // Determine if the first period is Fortified or Tyrannical
-      const testDungeonId = activeDungeonIds[0];
-      let firstAffixId: number | null = null;
-      try {
-        const testLb = await fetchLeaderboard(token, realmIds[0], testDungeonId, activePeriodId);
-        if (testLb.keystone_affixes && testLb.keystone_affixes.length > 0) {
-          firstAffixId = testLb.keystone_affixes[0].keystone_affix.id;
-        }
-      } catch {
-        // will fall back to just fetching the one period
-      }
+    // Fetch data from all periods in the season (for full arc chart progression)
+    for (const dungeonId of activeDungeonIds) {
+      for (const realmId of realmIds) {
+        for (const periodId of periods) {
+          try {
+            await sleep(55);
+            const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
+            if (!lb.leading_groups || lb.leading_groups.length === 0) continue;
 
-      // Try to find the opposite period
-      let oppositePeriodId: number | null = null;
-      if (firstAffixId !== null) {
-        oppositePeriodId = await findOppositePeriod(
-          token,
-          periods,
-          activePeriodId,
-          firstAffixId,
-          realmIds[0],
-          testDungeonId,
-        );
-      }
+            const entries = transformLeaderboard(lb, seasonId, realmId);
+            allEntries.push(...entries);
 
-      const periodIds = [activePeriodId];
-      if (oppositePeriodId !== null) {
-        periodIds.push(oppositePeriodId);
-        console.log(`  Found opposite period: ${activePeriodId} (${firstAffixId === 10 ? 'F' : 'T'}) + ${oppositePeriodId} (${firstAffixId === 10 ? 'T' : 'F'})`);
-      }
-
-      for (const periodId of periodIds) {
-        for (const dungeonId of activeDungeonIds) {
-          for (const realmId of realmIds) {
-            try {
-              await sleep(55);
-              const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
-              const entries = transformLeaderboard(lb, seasonId, realmId);
-              allEntries.push(...entries);
-
-              // Accumulate affix manifest: season → period → affixes
-              if (!affixManifest[seasonId]) {
-                affixManifest[seasonId] = {};
-              }
-              if (!affixManifest[seasonId][periodId]) {
-                affixManifest[seasonId][periodId] = (lb.keystone_affixes ?? []).map(affix => ({
-                  id: affix.keystone_affix.id,
-                  name: affix.keystone_affix.name,
-                }));
-              }
-            } catch (err) {
-              console.warn(`    Skip realm=${realmId} dungeon=${dungeonId} period=${periodId}: ${(err as Error).message}`);
+            // Accumulate affix manifest: season → period → affixes
+            if (!affixManifest[seasonId]) {
+              affixManifest[seasonId] = {};
             }
+            if (!affixManifest[seasonId][periodId]) {
+              affixManifest[seasonId][periodId] = (lb.keystone_affixes ?? []).map(affix => ({
+                id: affix.keystone_affix.id,
+                name: affix.keystone_affix.name,
+              }));
+            }
+          } catch (err) {
+            console.warn(`    Skip realm=${realmId} dungeon=${dungeonId} period=${periodId}: ${(err as Error).message}`);
           }
         }
       }
