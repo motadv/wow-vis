@@ -1,396 +1,428 @@
 {
   "dungeons": [
     {
-      "id": 375,
-      "name": "Mists of Tirna Scithe",
-      "abbrev": "MoTS",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "ardenweald"
-    },
-    {
-      "id": 376,
-      "name": "The Necrotic Wake",
-      "abbrev": "NW",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "bastion"
-    },
-    {
-      "id": 377,
-      "name": "De Other Side",
-      "abbrev": "DOS",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "de-other-side"
-    },
-    {
-      "id": 378,
-      "name": "Halls of Atonement",
-      "abbrev": "HoA",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "revendreth"
-    },
-    {
-      "id": 379,
-      "name": "Plaguefall",
-      "abbrev": "PF",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "maldraxxus"
-    },
-    {
-      "id": 380,
-      "name": "Sanguine Depths",
-      "abbrev": "SD",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "revendreth"
-    },
-    {
-      "id": 381,
-      "name": "Spires of Ascension",
-      "abbrev": "SoA",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "bastion"
-    },
-    {
-      "id": 382,
-      "name": "Theater of Pain",
-      "abbrev": "ToP",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "maldraxxus"
-    },
-    {
-      "id": 391,
-      "name": "Tazavesh: Streets of Wonder",
-      "abbrev": "TazS",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "tazavesh-the-veiled-market"
-    },
-    {
-      "id": 392,
-      "name": "Tazavesh: So'leah's Gambit",
-      "abbrev": "TazG",
-      "era": "shadowlands",
-      "offWorld": true,
-      "zone": "tazavesh-the-veiled-market"
-    },
-    {
-      "id": 169,
-      "name": "Iron Docks",
-      "abbrev": "IRD",
-      "era": "wod",
-      "offWorld": true,
-      "zone": "iron-docks"
-    },
-    {
-      "id": 166,
-      "name": "Grimrail Depot",
-      "abbrev": "GRD",
-      "era": "wod",
-      "offWorld": true,
-      "zone": "grimrail-depot"
-    },
-    {
-      "id": 234,
-      "name": "Return to Karazhan: Upper",
-      "abbrev": "RKU",
-      "era": "legion",
-      "offWorld": false,
-      "zone": "deadwind-pass"
-    },
-    {
-      "id": 227,
-      "name": "Return to Karazhan: Lower",
-      "abbrev": "RKL",
-      "era": "legion",
-      "offWorld": false,
-      "zone": "deadwind-pass"
-    },
-    {
-      "id": 369,
-      "name": "Operation: Mechagon - Junkyard",
-      "abbrev": "OJY",
-      "era": "bfa",
-      "offWorld": true,
-      "zone": "operation-mechagon"
-    },
-    {
-      "id": 370,
-      "name": "Operation: Mechagon - Workshop",
-      "abbrev": "OWS",
-      "era": "bfa",
-      "offWorld": true,
-      "zone": "operation-mechagon"
-    },
-    {
-      "id": 206,
-      "name": "Neltharion's Lair",
-      "abbrev": "NL",
-      "era": "legion",
-      "offWorld": false,
-      "zone": "highmountain"
-    },
-    {
-      "id": 251,
-      "name": "The Underrot",
-      "abbrev": "UNDR",
-      "era": "bfa",
-      "offWorld": false,
-      "zone": "nazmir"
-    },
-    {
-      "id": 245,
-      "name": "Freehold",
-      "abbrev": "FH",
-      "era": "bfa",
-      "offWorld": false,
-      "zone": "tiragarde-sound"
-    },
-    {
-      "id": 403,
-      "name": "Uldaman: Legacy of Tyr",
-      "abbrev": "ULD",
-      "era": "dragonflight",
-      "offWorld": false,
-      "zone": "badlands"
-    },
-    {
-      "id": 404,
-      "name": "Neltharus",
-      "abbrev": "NTH",
-      "era": "dragonflight",
-      "offWorld": false,
-      "zone": "forbidden-reach"
-    },
-    {
-      "id": 405,
-      "name": "Brackenhide Hollow",
-      "abbrev": "BHH",
-      "era": "dragonflight",
-      "offWorld": false,
-      "zone": "azure-span"
-    },
-    {
-      "id": 406,
-      "name": "Halls of Infusion",
-      "abbrev": "HoI",
-      "era": "dragonflight",
-      "offWorld": false,
-      "zone": "thaldraszus"
-    },
-    {
-      "id": 438,
-      "name": "The Vortex Pinnacle",
-      "abbrev": "VP",
-      "era": "cataclysm",
-      "offWorld": false,
-      "zone": "uldum"
-    },
-    {
-      "id": 168,
-      "name": "The Everbloom",
-      "abbrev": "EVB",
-      "era": "wod",
-      "offWorld": true,
-      "zone": "the-everbloom"
-    },
-    {
-      "id": 198,
-      "name": "Darkheart Thicket",
-      "abbrev": "DHT",
-      "era": "legion",
-      "offWorld": false,
-      "zone": "val-sharah"
-    },
-    {
-      "id": 199,
-      "name": "Black Rook Hold",
-      "abbrev": "BRH",
-      "era": "legion",
-      "offWorld": false,
-      "zone": "val-sharah"
+      "id": 247,
+      "name": "The MOTHERLODE!!",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 248,
       "name": "Waycrest Manor",
-      "abbrev": "WCM",
-      "era": "bfa",
-      "offWorld": false,
-      "zone": "drustvar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 249,
+      "name": "Kings' Rest",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 250,
+      "name": "Temple of Sethraliss",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 251,
+      "name": "The Underrot",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 252,
+      "name": "Shrine of the Storm",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 244,
       "name": "Atal'Dazar",
-      "abbrev": "ADZ",
-      "era": "bfa",
-      "offWorld": false,
-      "zone": "zuldazar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
-      "id": 463,
-      "name": "Dawn of the Infinite: Galakrond's Fall",
-      "abbrev": "DTIG",
-      "era": "dragonflight",
-      "offWorld": true,
-      "zone": "dawn-of-the-infinite"
+      "id": 245,
+      "name": "Freehold",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
-      "id": 464,
-      "name": "Dawn of the Infinite: Murozond's Rise",
-      "abbrev": "DTIM",
-      "era": "dragonflight",
-      "offWorld": true,
-      "zone": "dawn-of-the-infinite"
-    },
-    {
-      "id": 456,
-      "name": "Throne of the Tides",
-      "abbrev": "TotT",
-      "era": "cataclysm",
-      "offWorld": false,
-      "zone": "vashj-ir"
-    },
-    {
-      "id": 399,
-      "name": "Ruby Life Pools",
-      "abbrev": "RLP",
-      "era": "dragonflight",
-      "offWorld": false,
-      "zone": "waking-shores"
-    },
-    {
-      "id": 400,
-      "name": "The Nokhud Offensive",
-      "abbrev": "NOK",
-      "era": "dragonflight",
-      "offWorld": false,
-      "zone": "ohnahran-plains"
-    },
-    {
-      "id": 401,
-      "name": "The Azure Vault",
-      "abbrev": "AV",
-      "era": "dragonflight",
-      "offWorld": false,
-      "zone": "azure-span"
-    },
-    {
-      "id": 402,
-      "name": "Algeth'ar Academy",
-      "abbrev": "AlAc",
-      "era": "dragonflight",
-      "offWorld": false,
-      "zone": "thaldraszus"
+      "id": 246,
+      "name": "Tol Dagor",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 353,
       "name": "Siege of Boralus",
-      "abbrev": "SotB",
-      "era": "bfa",
-      "offWorld": false,
-      "zone": "tiragarde-sound"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 369,
+      "name": "Operation: Mechagon - Junkyard",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 370,
+      "name": "Operation: Mechagon - Workshop",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 375,
+      "name": "Mists of Tirna Scithe",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 376,
+      "name": "The Necrotic Wake",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 377,
+      "name": "De Other Side",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 378,
+      "name": "Halls of Atonement",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 379,
+      "name": "Plaguefall",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 380,
+      "name": "Sanguine Depths",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 381,
+      "name": "Spires of Ascension",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 382,
+      "name": "Theater of Pain",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 391,
+      "name": "Tazavesh: Streets of Wonder",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 392,
+      "name": "Tazavesh: So'leah's Gambit",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 169,
+      "name": "Iron Docks",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 166,
+      "name": "Grimrail Depot",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 234,
+      "name": "Return to Karazhan: Upper",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 227,
+      "name": "Return to Karazhan: Lower",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 206,
+      "name": "Neltharion's Lair",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 403,
+      "name": "Uldaman: Legacy of Tyr",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 404,
+      "name": "Neltharus",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 405,
+      "name": "Brackenhide Hollow",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 406,
+      "name": "Halls of Infusion",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 438,
+      "name": "The Vortex Pinnacle",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 168,
+      "name": "The Everbloom",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 198,
+      "name": "Darkheart Thicket",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 199,
+      "name": "Black Rook Hold",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 463,
+      "name": "Dawn of the Infinite: Galakrond's Fall",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 464,
+      "name": "Dawn of the Infinite: Murozond's Rise",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 456,
+      "name": "Throne of the Tides",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 399,
+      "name": "Ruby Life Pools",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 400,
+      "name": "The Nokhud Offensive",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 401,
+      "name": "The Azure Vault",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 402,
+      "name": "Algeth'ar Academy",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 501,
       "name": "The Stonevault",
-      "abbrev": "StV",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 502,
       "name": "City of Threads",
-      "abbrev": "CoT",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 503,
       "name": "Ara-Kara, City of Echoes",
-      "abbrev": "ArK",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 505,
       "name": "The Dawnbreaker",
-      "abbrev": "DWN",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 507,
       "name": "Grim Batol",
-      "abbrev": "GB",
-      "era": "cataclysm",
-      "offWorld": false,
-      "zone": "twilight-highlands"
-    },
-    {
-      "id": 247,
-      "name": "The MOTHERLODE!!",
-      "abbrev": "MTHL",
-      "era": "bfa",
-      "offWorld": false,
-      "zone": "kezan"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 525,
       "name": "Operation: Floodgate",
-      "abbrev": "FLG",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 499,
       "name": "Priory of the Sacred Flame",
-      "abbrev": "PSF",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 500,
       "name": "The Rookery",
-      "abbrev": "RKY",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 504,
       "name": "Darkflame Cleft",
-      "abbrev": "DfC",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 506,
       "name": "Cinderbrew Meadery",
-      "abbrev": "CBM",
-      "era": "tww",
-      "offWorld": false,
-      "zone": "khaz-algar"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     },
     {
       "id": 542,
       "name": "Eco-Dome Al'dani",
-      "abbrev": "EDA",
-      "era": "tww",
-      "offWorld": true,
-      "zone": "ecodome-aldani"
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
     }
   ],
   "seasons": [
@@ -398,31 +430,90 @@
       "id": 1,
       "name": "Season 1",
       "startTimestamp": 1535500800000,
-      "dungeonIds": []
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353
+      ]
     },
     {
       "id": 2,
       "name": "Season 2",
       "startTimestamp": 1548169200000,
-      "dungeonIds": []
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353
+      ]
     },
     {
       "id": 3,
       "name": "Season 3",
       "startTimestamp": 1562684400000,
-      "dungeonIds": []
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353
+      ]
     },
     {
       "id": 4,
       "name": "Season 4",
       "startTimestamp": 1579618800000,
-      "dungeonIds": []
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353,
+        369,
+        370
+      ]
     },
     {
       "id": 5,
       "name": "Mythic+ Dungeons (Shadowlands Season 1)",
       "startTimestamp": 1606172400000,
-      "dungeonIds": []
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353,
+        369,
+        370
+      ]
     },
     {
       "id": 6,
@@ -572,100 +663,10 @@
         525,
         499,
         503,
+        505,
         542
       ]
     }
   ],
-  "zones": [
-    {
-      "slug": "deadwind-pass",
-      "x": 3360,
-      "y": 1684
-    },
-    {
-      "slug": "badlands",
-      "x": 3412,
-      "y": 1560
-    },
-    {
-      "slug": "vashj-ir",
-      "x": 3048,
-      "y": 1342
-    },
-    {
-      "slug": "twilight-highlands",
-      "x": 3542,
-      "y": 893
-    },
-    {
-      "slug": "uldum",
-      "x": 645,
-      "y": 1918
-    },
-    {
-      "slug": "val-sharah",
-      "x": 2127,
-      "y": 993
-    },
-    {
-      "slug": "highmountain",
-      "x": 2272,
-      "y": 893
-    },
-    {
-      "slug": "tiragarde-sound",
-      "x": 2830,
-      "y": 1342
-    },
-    {
-      "slug": "drustvar",
-      "x": 2627,
-      "y": 1324
-    },
-    {
-      "slug": "zuldazar",
-      "x": 2115,
-      "y": 1700
-    },
-    {
-      "slug": "kezan",
-      "x": 2612,
-      "y": 1369
-    },
-    {
-      "slug": "nazmir",
-      "x": 2130,
-      "y": 1506
-    },
-    {
-      "slug": "waking-shores",
-      "x": 2915,
-      "y": 466
-    },
-    {
-      "slug": "ohnahran-plains",
-      "x": 2851,
-      "y": 612
-    },
-    {
-      "slug": "azure-span",
-      "x": 2990,
-      "y": 721
-    },
-    {
-      "slug": "thaldraszus",
-      "x": 3090,
-      "y": 563
-    },
-    {
-      "slug": "forbidden-reach",
-      "x": 3078,
-      "y": 300
-    },
-    {
-      "slug": "khaz-algar",
-      "x": 1118,
-      "y": 2130
-    }
-  ]
+  "zones": []
 }
