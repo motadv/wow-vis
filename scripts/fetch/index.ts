@@ -17,8 +17,8 @@ async function discoverActiveDungeons(
   allDungeonIds: number[],
   periods: number[],
   realmId: number,
-): Promise<number[]> {
-  // Try each period in order; stop as soon as we find one with data (for efficiency check)
+): Promise<{ dungeonIds: number[]; activePeriodId: number | null }> {
+  // Try each period in order; stop as soon as we find one with data.
   for (const periodId of periods) {
     const active: number[] = [];
     for (const dungeonId of allDungeonIds) {
@@ -32,10 +32,10 @@ async function discoverActiveDungeons(
         // dungeon not active in this period/season
       }
     }
-    if (active.length > 0) return active;
+    if (active.length > 0) return { dungeonIds: active, activePeriodId: periodId };
     console.log(`      Period ${periodId} → no active dungeons, trying next...`);
   }
-  return [];
+  return { dungeonIds: [], activePeriodId: null };
 }
 
 async function main() {
@@ -73,13 +73,13 @@ async function main() {
     const periods = season.periods.map(p => p.id);
 
     console.log(`  Discovering active dungeons across ${periods.length} periods on realm ${realmIds[0]}...`);
-    const activeDungeonIds = await discoverActiveDungeons(
+    const { dungeonIds: activeDungeonIds, activePeriodId } = await discoverActiveDungeons(
       token, allDungeonIds, periods, realmIds[0],
     );
-    console.log(`  Active dungeons: ${activeDungeonIds.join(', ')}`);
+    console.log(`  Active dungeons: ${activeDungeonIds.join(', ')} (period ${activePeriodId})`);
 
-    if (activeDungeonIds.length === 0) {
-      console.log(`  ⚠️  No active dungeons found; skipping season`);
+    if (activePeriodId === null) {
+      console.log(`  ⚠️  No active period found across ${periods.length} periods; skipping leaderboard fetch`);
       continue;
     }
 
@@ -106,31 +106,26 @@ async function main() {
 
     const allEntries: LeaderboardEntry[] = [];
 
-    // Fetch data from all periods in the season (for full arc chart progression)
     for (const dungeonId of activeDungeonIds) {
       for (const realmId of realmIds) {
-        for (const periodId of periods) {
-          try {
-            await sleep(55);
-            const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
-            if (!lb.leading_groups || lb.leading_groups.length === 0) continue;
+        try {
+          await sleep(55);
+          const lb = await fetchLeaderboard(token, realmId, dungeonId, activePeriodId);
+          const entries = transformLeaderboard(lb, seasonId, realmId);
+          allEntries.push(...entries);
 
-            const entries = transformLeaderboard(lb, seasonId, realmId);
-            allEntries.push(...entries);
-
-            // Accumulate affix manifest: season → period → affixes
-            if (!affixManifest[seasonId]) {
-              affixManifest[seasonId] = {};
-            }
-            if (!affixManifest[seasonId][periodId]) {
-              affixManifest[seasonId][periodId] = (lb.keystone_affixes ?? []).map(affix => ({
-                id: affix.keystone_affix.id,
-                name: affix.keystone_affix.name,
-              }));
-            }
-          } catch (err) {
-            console.warn(`    Skip realm=${realmId} dungeon=${dungeonId} period=${periodId}: ${(err as Error).message}`);
+          // Accumulate affix manifest: season → period → affixes
+          if (!affixManifest[seasonId]) {
+            affixManifest[seasonId] = {};
           }
+          if (!affixManifest[seasonId][activePeriodId]) {
+            affixManifest[seasonId][activePeriodId] = (lb.keystone_affixes ?? []).map(affix => ({
+              id: affix.keystone_affix.id,
+              name: affix.keystone_affix.name,
+            }));
+          }
+        } catch (err) {
+          console.warn(`    Skip realm=${realmId} dungeon=${dungeonId} period=${activePeriodId}: ${(err as Error).message}`);
         }
       }
     }
