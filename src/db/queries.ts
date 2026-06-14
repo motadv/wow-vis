@@ -76,8 +76,8 @@ export async function getDungeonAffixTrend(
 ): Promise<AffixTrendRow[]> {
   const unions = seasonIds
     .map(id => {
-      const where = periodIds ? `WHERE period IN (${periodIds.join(',')})` : '';
-      return `SELECT ${id}::INTEGER AS season_id, fortified, MEDIAN(keystone_level)::FLOAT AS median_key FROM leaderboard_${id} WHERE dungeon_id = ${dungeonId} ${where} GROUP BY fortified`;
+      const periodFilter = periodIds ? `AND period IN (${periodIds.join(',')})` : '';
+      return `SELECT ${id}::INTEGER AS season_id, fortified, MEDIAN(keystone_level)::FLOAT AS median_key FROM leaderboard_${id} WHERE dungeon_id = ${dungeonId} ${periodFilter} GROUP BY fortified`;
     })
     .join(' UNION ALL ');
   const result = await conn.query(unions);

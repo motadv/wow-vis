@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import type { AffixManifest } from '../types.js';
-import { getState, subscribe } from '../state.js';
+import { getState, setState, subscribe } from '../state.js';
 import {
   getDungeonAffixTrend,
   getSeasonAffixSnapshot,
@@ -20,9 +20,127 @@ export async function initAffixChart(
   const container = document.querySelector('#affix');
   if (!container) return;
 
+  container.innerHTML = '';
+
+  // Build lens tabs
+  const tabsDiv = document.createElement('div');
+  tabsDiv.className = 'affix-tabs';
+
+  const lenses = ['trend', 'snapshot', 'headtohead'] as const;
+  const lensLabels = { trend: 'Trend', snapshot: 'Snapshot', headtohead: 'Head-to-Head' };
+
+  for (const lens of lenses) {
+    const btn = document.createElement('button');
+    btn.className = 'affix-tab';
+    btn.textContent = lensLabels[lens];
+    btn.onclick = () => {
+      setState({
+        affixLens: lens,
+        affixFilters: { ...getState().affixFilters, secondaryAffixId: null, fortified: null },
+      });
+    };
+    tabsDiv.appendChild(btn);
+  }
+  container.appendChild(tabsDiv);
+
+  // Build filter controls
+  const filtersDiv = document.createElement('div');
+  filtersDiv.className = 'affix-filters';
+
+  // Dungeon selector
+  const dungeonSelect = document.createElement('select');
+  dungeonSelect.className = 'affix-select';
+  dungeonSelect.id = 'affix-dungeon-select';
+  const dungeonPlaceholder = document.createElement('option');
+  dungeonPlaceholder.value = '';
+  dungeonPlaceholder.textContent = 'Select dungeon…';
+  dungeonSelect.appendChild(dungeonPlaceholder);
+  const sortedDungeons = Array.from(dungeonNames.entries())
+    .sort((a, b) => a[1].localeCompare(b[1]));
+  for (const [dungeonId, name] of sortedDungeons) {
+    const opt = document.createElement('option');
+    opt.value = String(dungeonId);
+    opt.textContent = name;
+    dungeonSelect.appendChild(opt);
+  }
+  dungeonSelect.onchange = (e) => {
+    const val = (e.target as HTMLSelectElement).value;
+    setState({
+      affixFilters: { ...getState().affixFilters, dungeonId: val ? Number(val) : null },
+    });
+  };
+  filtersDiv.appendChild(dungeonSelect);
+
+  // Season selector
+  const seasonSelect = document.createElement('select');
+  seasonSelect.className = 'affix-select';
+  seasonSelect.id = 'affix-season-select';
+  const seasonPlaceholder = document.createElement('option');
+  seasonPlaceholder.value = '';
+  seasonPlaceholder.textContent = 'Current season';
+  seasonSelect.appendChild(seasonPlaceholder);
+  for (const sid of seasonIds) {
+    const opt = document.createElement('option');
+    opt.value = String(sid);
+    opt.textContent = `Season ${sid}`;
+    seasonSelect.appendChild(opt);
+  }
+  seasonSelect.onchange = (e) => {
+    const val = (e.target as HTMLSelectElement).value;
+    setState({
+      affixFilters: { ...getState().affixFilters, seasonId: val ? Number(val) : null },
+    });
+  };
+  filtersDiv.appendChild(seasonSelect);
+
+  // Fortified toggle (Head-to-Head only)
+  const fortToggle = document.createElement('button');
+  fortToggle.className = 'affix-toggle';
+  fortToggle.id = 'affix-fortified-toggle';
+  fortToggle.textContent = 'All';
+  let toggleState: null | true | false = null;
+  fortToggle.onclick = () => {
+    toggleState = toggleState === null ? true : toggleState === true ? false : null;
+    fortToggle.textContent = toggleState === null ? 'All' : toggleState ? 'Fortified' : 'Tyrannical';
+    setState({
+      affixFilters: { ...getState().affixFilters, fortified: toggleState },
+    });
+  };
+  filtersDiv.appendChild(fortToggle);
+
+  container.appendChild(filtersDiv);
+
+  // Chart area
+  const chartDiv = document.createElement('div');
+  chartDiv.className = 'affix-chart';
+  container.appendChild(chartDiv);
+
   async function updateChart() {
     const state = getState();
     const { affixLens, affixFilters } = state;
+
+    // Update active tab
+    const tabs = tabsDiv.querySelectorAll('.affix-tab');
+    tabs.forEach((tab, i) => {
+      tab.classList.toggle('active', lenses[i] === affixLens);
+    });
+
+    // Update filter visibility
+    dungeonSelect.hidden = affixLens === 'snapshot';
+    seasonSelect.hidden = affixLens === 'trend';
+    fortToggle.hidden = affixLens !== 'headtohead';
+
+    // Sync selected dungeon from global state if not set
+    if (!affixFilters.dungeonId && state.selectedDungeon) {
+      setTimeout(() => {
+        setState({
+          affixFilters: { ...getState().affixFilters, dungeonId: state.selectedDungeon },
+        });
+      }, 0);
+    }
+
+    // Sync selected season from arc if not set
+    const effectiveSeasonId = affixFilters.seasonId ?? state.selectedSeasonForArc;
 
     try {
       if (affixLens === 'trend') {
@@ -32,25 +150,25 @@ export async function initAffixChart(
           affixFilters.dungeonId,
           seasonIds,
           affixFilters.secondaryAffixId,
-          container as HTMLElement,
+          chartDiv,
         );
       } else if (affixLens === 'snapshot') {
         await renderSnapshot(
           conn,
           affixManifest,
-          affixFilters.seasonId ?? state.selectedSeasonForArc,
+          effectiveSeasonId,
           affixFilters.secondaryAffixId,
           dungeonNames,
-          container as HTMLElement,
+          chartDiv,
         );
       } else if (affixLens === 'headtohead') {
         await renderHeadToHead(
           conn,
           affixManifest,
           affixFilters.dungeonId,
-          affixFilters.seasonId ?? state.selectedSeasonForArc,
+          effectiveSeasonId,
           affixFilters.fortified,
-          container as HTMLElement,
+          chartDiv,
         );
       }
     } catch (err) {
@@ -73,7 +191,10 @@ async function renderTrend(
   secondaryAffixId: number | null,
   container: HTMLElement,
 ): Promise<AffixTrendRow[]> {
-  if (!dungeonId) return [];
+  if (!dungeonId) {
+    container.innerHTML = '<div class="affix-empty-state">Select a dungeon to see Fortified vs Tyrannical trend across seasons</div>';
+    return [];
+  }
 
   let periodIds: number[] | undefined;
   if (secondaryAffixId) {
@@ -111,7 +232,10 @@ async function renderSnapshot(
   dungeonNames: Map<number, string>,
   container: HTMLElement,
 ): Promise<AffixSnapshotRow[]> {
-  if (!seasonId) return [];
+  if (!seasonId) {
+    container.innerHTML = '<div class="affix-empty-state">No season selected</div>';
+    return [];
+  }
 
   let periodIds: number[] | undefined;
   if (secondaryAffixId && affixManifest[seasonId]) {
@@ -146,17 +270,26 @@ async function renderHeadToHead(
   fortified: boolean | null,
   container: HTMLElement,
 ): Promise<AffixHeadToHeadRow[]> {
-  if (!dungeonId || !seasonId || !affixManifest[seasonId]) return [];
+  if (!dungeonId || !seasonId) {
+    container.innerHTML = '<div class="affix-empty-state">Select a dungeon and season to compare secondary affixes</div>';
+    return [];
+  }
+
+  if (!affixManifest[seasonId]) {
+    container.innerHTML = '<div class="affix-empty-state">No affix data for this season</div>';
+    return [];
+  }
 
   // Build periodIdsByAffix map
   const allAffixes = new Map<number, number[]>();
   for (const [periodId, affixes] of Object.entries(affixManifest[seasonId])) {
+    const isFortified = affixes.some(a => a.id === 10);
+    // Skip this period if fortified filter doesn't match
+    if (fortified !== null && isFortified !== fortified) continue;
+
     for (const affix of affixes) {
       if (!allAffixes.has(affix.id)) allAffixes.set(affix.id, []);
-      const periods = allAffixes.get(affix.id)!;
-      if (fortified === null || affix.id === 10 === fortified) {
-        periods.push(Number(periodId));
-      }
+      allAffixes.get(affix.id)!.push(Number(periodId));
     }
   }
 

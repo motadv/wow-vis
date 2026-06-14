@@ -186,7 +186,82 @@ html, body {
 
 /* --- Affix analysis panel --- */
 
-#affix svg {
+.affix-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 4px;
+  border-bottom: 1px solid #27272a;
+}
+
+.affix-tab {
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #71717a;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.affix-tab:hover {
+  color: #a1a1aa;
+}
+
+.affix-tab.active {
+  color: #e4e4e7;
+  border-bottom-color: #818cf8;
+}
+
+.affix-filters {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #27272a;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.affix-select,
+.affix-toggle {
+  padding: 6px 10px;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 4px;
+  color: #e4e4e7;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.affix-select:hover,
+.affix-toggle:hover {
+  border-color: #52525b;
+}
+
+.affix-select:focus,
+.affix-toggle:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 1px;
+}
+
+.affix-chart {
+  flex: 1;
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.affix-chart svg {
   width: 100%;
   height: 100%;
+}
+
+.affix-empty-state {
+  color: #71717a;
+  font-size: 13px;
+  text-align: center;
 }
