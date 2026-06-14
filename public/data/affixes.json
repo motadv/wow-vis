@@ -17,24 +17,6 @@
         "id": 16,
         "name": "Infested"
       }
-    ],
-    "663": [
-      {
-        "id": 9,
-        "name": "Tyrannical"
-      },
-      {
-        "id": 11,
-        "name": "Bursting"
-      },
-      {
-        "id": 2,
-        "name": "Skittish"
-      },
-      {
-        "id": 16,
-        "name": "Infested"
-      }
     ]
   },
   "2": {
@@ -50,24 +32,6 @@
       {
         "id": 14,
         "name": "Quaking"
-      },
-      {
-        "id": 117,
-        "name": "Reaping"
-      }
-    ],
-    "683": [
-      {
-        "id": 9,
-        "name": "Tyrannical"
-      },
-      {
-        "id": 6,
-        "name": "Raging"
-      },
-      {
-        "id": 3,
-        "name": "Volcanic"
       },
       {
         "id": 117,
@@ -93,24 +57,6 @@
         "id": 119,
         "name": "Beguiling"
       }
-    ],
-    "707": [
-      {
-        "id": 9,
-        "name": "Tyrannical"
-      },
-      {
-        "id": 6,
-        "name": "Raging"
-      },
-      {
-        "id": 13,
-        "name": "Explosive"
-      },
-      {
-        "id": 119,
-        "name": "Beguiling"
-      }
     ]
   },
   "4": {
@@ -126,24 +72,6 @@
       {
         "id": 2,
         "name": "Skittish"
-      },
-      {
-        "id": 120,
-        "name": "Awakened"
-      }
-    ],
-    "735": [
-      {
-        "id": 9,
-        "name": "Tyrannical"
-      },
-      {
-        "id": 11,
-        "name": "Bursting"
-      },
-      {
-        "id": 4,
-        "name": "Necrotic"
       },
       {
         "id": 120,
@@ -189,24 +117,6 @@
         "id": 128,
         "name": "Tormented"
       }
-    ],
-    "811": [
-      {
-        "id": 10,
-        "name": "Fortified"
-      },
-      {
-        "id": 122,
-        "name": "Inspiring"
-      },
-      {
-        "id": 12,
-        "name": "Grievous"
-      },
-      {
-        "id": 128,
-        "name": "Tormented"
-      }
     ]
   },
   "7": {
@@ -227,24 +137,6 @@
         "id": 130,
         "name": "Encrypted"
       }
-    ],
-    "845": [
-      {
-        "id": 10,
-        "name": "Fortified"
-      },
-      {
-        "id": 11,
-        "name": "Bursting"
-      },
-      {
-        "id": 124,
-        "name": "Storming"
-      },
-      {
-        "id": 130,
-        "name": "Encrypted"
-      }
     ]
   },
   "8": {
@@ -260,24 +152,6 @@
       {
         "id": 14,
         "name": "Quaking"
-      },
-      {
-        "id": 131,
-        "name": "Shrouded"
-      }
-    ],
-    "867": [
-      {
-        "id": 10,
-        "name": "Fortified"
-      },
-      {
-        "id": 8,
-        "name": "Sanguine"
-      },
-      {
-        "id": 12,
-        "name": "Grievous"
       },
       {
         "id": 131,
@@ -315,20 +189,6 @@
         "id": 6,
         "name": "Raging"
       }
-    ],
-    "907": [
-      {
-        "id": 10,
-        "name": "Fortified"
-      },
-      {
-        "id": 134,
-        "name": "Entangling"
-      },
-      {
-        "id": 7,
-        "name": "Bolstering"
-      }
     ]
   },
   "11": {
@@ -345,20 +205,6 @@
         "id": 8,
         "name": "Sanguine"
       }
-    ],
-    "934": [
-      {
-        "id": 9,
-        "name": "Tyrannical"
-      },
-      {
-        "id": 134,
-        "name": "Entangling"
-      },
-      {
-        "id": 11,
-        "name": "Bursting"
-      }
     ]
   },
   "12": {
@@ -374,20 +220,6 @@
       {
         "id": 6,
         "name": "Raging"
-      }
-    ],
-    "957": [
-      {
-        "id": 10,
-        "name": "Fortified"
-      },
-      {
-        "id": 134,
-        "name": "Entangling"
-      },
-      {
-        "id": 7,
-        "name": "Bolstering"
       }
     ]
   },
@@ -413,28 +245,6 @@
         "id": 147,
         "name": "Xal'atath's Guile"
       }
-    ],
-    "978": [
-      {
-        "id": 159,
-        "name": "Xal'atath's Bargain: Oblivion"
-      },
-      {
-        "id": 10,
-        "name": "Fortified"
-      },
-      {
-        "id": 152,
-        "name": "Challenger's Peril"
-      },
-      {
-        "id": 9,
-        "name": "Tyrannical"
-      },
-      {
-        "id": 147,
-        "name": "Xal'atath's Guile"
-      }
     ]
   },
   "14": {
@@ -455,24 +265,6 @@
         "id": 147,
         "name": "Xal'atath's Guile"
       }
-    ],
-    "1002": [
-      {
-        "id": 162,
-        "name": "Xal'atath's Bargain: Pulsar"
-      },
-      {
-        "id": 10,
-        "name": "Fortified"
-      },
-      {
-        "id": 9,
-        "name": "Tyrannical"
-      },
-      {
-        "id": 147,
-        "name": "Xal'atath's Guile"
-      }
     ]
   },
   "15": {
@@ -488,24 +280,6 @@
       {
         "id": 10,
         "name": "Fortified"
-      },
-      {
-        "id": 147,
-        "name": "Xal'atath's Guile"
-      }
-    ],
-    "1025": [
-      {
-        "id": 162,
-        "name": "Xal'atath's Bargain: Pulsar"
-      },
-      {
-        "id": 10,
-        "name": "Fortified"
-      },
-      {
-        "id": 9,
-        "name": "Tyrannical"
       },
       {
         "id": 147,
