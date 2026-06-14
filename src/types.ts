@@ -36,6 +36,13 @@ export interface SeasonMeta {
   dungeonIds: number[]; // map_challenge_mode_ids active in this season
 }
 
+export interface AffixEntry {
+  id: number;
+  name: string;
+}
+
+export type AffixManifest = Record<number, Record<number, AffixEntry[]>>; // season → period → affixes
+
 export interface DungeonManifest {
   dungeons: DungeonMeta[];
   seasons: SeasonMeta[];
@@ -60,4 +67,11 @@ export interface WeeklyArcRow {
 export interface AppState {
   selectedDungeon: number | null;
   selectedSeasonForArc: number | null;  // which season's line is emphasized; null = all equal
+  affixLens: 'trend' | 'snapshot' | 'headtohead';
+  affixFilters: {
+    dungeonId: number | null;       // lens 1 + 3
+    seasonId: number | null;        // lens 2 + 3; defaults to selectedSeasonForArc
+    fortified: boolean | null;      // lens 3 only; null = both
+    secondaryAffixId: number | null; // lens 1 + 2; null = all weeks
+  };
 }

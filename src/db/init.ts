@@ -1,11 +1,18 @@
 import * as duckdb from '@duckdb/duckdb-wasm';
 import ehWasm from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
 import ehWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
-
+import type { AffixManifest } from '../types.js';
 
 let db: duckdb.AsyncDuckDB | null = null;
 let conn: duckdb.AsyncDuckDBConnection | null = null;
 const loadedSeasons = new Set<number>();
+let affixManifest: AffixManifest | null = null;
+
+async function loadAffixes(): Promise<void> {
+  const url = new URL('/data/affixes.json', window.location.origin).href;
+  const response = await fetch(url);
+  affixManifest = await response.json();
+}
 
 export async function initDB(): Promise<void> {
   // Force the EH (exception-handling, single-threaded) bundle even when
@@ -20,6 +27,8 @@ export async function initDB(): Promise<void> {
   db = new duckdb.AsyncDuckDB(logger, worker);
   await db.instantiate(ehWasm, null);
   conn = await db.connect();
+
+  await loadAffixes();
 }
 
 export async function loadSeason(seasonId: number): Promise<void> {
@@ -40,4 +49,9 @@ export async function loadSeason(seasonId: number): Promise<void> {
 export function getConnection(): duckdb.AsyncDuckDBConnection {
   if (!conn) throw new Error('DB not initialized');
   return conn;
+}
+
+export function getAffixManifest(): AffixManifest {
+  if (!affixManifest) throw new Error('Affix manifest not loaded');
+  return affixManifest;
 }

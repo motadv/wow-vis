@@ -3,6 +3,13 @@ import type { AppState } from './types.js';
 let state: AppState = {
   selectedDungeon: null,
   selectedSeasonForArc: null,
+  affixLens: 'trend',
+  affixFilters: {
+    dungeonId: null,
+    seasonId: null,
+    fortified: null,
+    secondaryAffixId: null,
+  },
 };
 
 type Listener = (state: AppState) => void;

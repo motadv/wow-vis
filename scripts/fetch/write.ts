@@ -2,7 +2,7 @@ import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import duckdb from 'duckdb';
-import type { DungeonManifest, LeaderboardEntry } from './types.js';
+import type { AffixManifest, DungeonManifest, LeaderboardEntry } from './types.js';
 
 const OUT_DIR = 'public/data';
 
@@ -33,5 +33,10 @@ export async function writeParquet(seasonId: number, entries: LeaderboardEntry[]
 
 export async function writeManifest(manifest: DungeonManifest): Promise<void> {
   const outPath = join(OUT_DIR, 'dungeons.json');
+  await writeFile(outPath, JSON.stringify(manifest, null, 2), 'utf8');
+}
+
+export async function writeAffixManifest(manifest: AffixManifest): Promise<void> {
+  const outPath = join(OUT_DIR, 'affixes.json');
   await writeFile(outPath, JSON.stringify(manifest, null, 2), 'utf8');
 }

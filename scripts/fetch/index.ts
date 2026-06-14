@@ -1,8 +1,8 @@
 import { fetchToken } from './auth.js';
 import { fetchAllDungeons, fetchSeasonIds, fetchSeason, fetchLeaderboard } from './blizzard.js';
 import { transformLeaderboard } from './transform.js';
-import { ensureOutDir, writeParquet, writeManifest } from './write.js';
-import type { DungeonManifest, DungeonMeta, SeasonMeta, LeaderboardEntry } from './types.js';
+import { ensureOutDir, writeParquet, writeManifest, writeAffixManifest } from './write.js';
+import type { AffixManifest, DungeonManifest, DungeonMeta, SeasonMeta, LeaderboardEntry } from './types.js';
 
 const clientId = process.env.VITE_BLIZZARD_CLIENT_ID;
 const clientSecret = process.env.VITE_BLIZZARD_CLIENT_SECRET;
@@ -59,6 +59,7 @@ async function main() {
 
   const dungeonMap = new Map<number, DungeonMeta>();
   const seasons: SeasonMeta[] = [];
+  const affixManifest: AffixManifest = {};
 
   for (const seasonId of seasonIds) {
     const season = await fetchSeason(token, seasonId);
@@ -82,6 +83,7 @@ async function main() {
         dungeonMap.set(dungeonId, {
           id: dungeonId,
           name: dungeonNameById.get(dungeonId) ?? `Dungeon ${dungeonId}`,
+          abbrev: '???',    // placeholder — fill manually
           era: 'vanilla',   // placeholder — fill manually
           zone: 'unknown',  // placeholder — fill manually
           offWorld: false,  // placeholder — fill manually
@@ -107,6 +109,17 @@ async function main() {
             const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
             const entries = transformLeaderboard(lb, seasonId, realmId);
             allEntries.push(...entries);
+
+            // Accumulate affix manifest: season → period → affixes
+            if (!affixManifest[seasonId]) {
+              affixManifest[seasonId] = {};
+            }
+            if (!affixManifest[seasonId][periodId]) {
+              affixManifest[seasonId][periodId] = lb.keystone_affixes.map(affix => ({
+                id: affix.keystone_affix.id,
+                name: affix.keystone_affix.name,
+              }));
+            }
           } catch (err) {
             console.warn(`    Skip realm=${realmId} dungeon=${dungeonId} period=${periodId}: ${(err as Error).message}`);
           }
@@ -127,6 +140,10 @@ async function main() {
 
   await writeManifest(manifest);
   console.log('\nWritten public/data/dungeons.json');
+
+  await writeAffixManifest(affixManifest);
+  console.log('Written public/data/affixes.json');
+
   console.log('\nDone. Remember to manually fill era, mapX, mapY, offWorld in dungeons.json.');
 }
 

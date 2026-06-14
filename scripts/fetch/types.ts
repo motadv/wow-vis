@@ -36,6 +36,13 @@ export interface SeasonMeta {
   dungeonIds: number[]; // map_challenge_mode_ids active in this season
 }
 
+export interface AffixEntry {
+  id: number;
+  name: string;
+}
+
+export type AffixManifest = Record<number, Record<number, AffixEntry[]>>; // season → period → affixes
+
 export interface DungeonManifest {
   dungeons: DungeonMeta[];
   seasons: SeasonMeta[];
@@ -50,6 +57,7 @@ export interface LeaderboardEntry {
   realm_id: number;
   keystone_level: number;
   duration_ms: number;
+  fortified: boolean;   // true if week had Fortified (affix ID 10); false = Tyrannical
 }
 
 // Raw Blizzard API shapes
@@ -96,4 +104,5 @@ export interface BlizzardLeaderboard {
   map: { name: string; id: number };
   period: number;
   leading_groups: BlizzardLeaderboardGroup[];
+  keystone_affixes: Array<{ keystone_affix: { id: number; name: string }; starting_level: number }>;
 }
