@@ -13,7 +13,7 @@ npm run test         # Run unit tests (Vitest)
 npm run test:watch   # Run tests in watch mode
 ```
 
-**Before running fetch after code changes:** `rm public/data/season-*.parquet` to clear old/corrupted files.
+**Before running fetch after code changes:** `rm public/data/season-*.parquet` to clear old/corrupted files. **IMPORTANT:** The fetch script regenerates `dungeons.json` and resets all manual metadata (abbreviations, era, zone, offWorld) to defaults. Back up the current `public/data/dungeons.json` before running fetch, then restore metadata from the backup afterward using git: `git show HEAD:public/data/dungeons.json | jq '.dungeons'` to recover abbreviations and eras from the last commit.
 
 ## Environment
 
@@ -45,7 +45,9 @@ Two distinct runtimes — an offline data pipeline and an in-browser viz — sha
 
 Run once via `npm run fetch`. Authenticates with Blizzard OAuth, batches seasons for parallel processing, fetches leaderboard data for a sample of US connected realms, and writes:
 - `public/data/season-N.parquet` — one file per completed season
-- `public/data/dungeons.json` — dungeon manifest. After generation, manually set `era`, `zone`, `offWorld` per dungeon and `x`/`y` per zone anchor. See `docs/data-decisions.md` for all classification decisions already made.
+- `public/data/dungeons.json` — dungeon manifest. After generation, manually set `abbrev`, `era`, `zone`, `offWorld` per dungeon and `x`/`y` per zone anchor. See `docs/data-decisions.md` for all classification decisions already made.
+
+**Dungeon manifest metadata:** The fetch script resets all manual fields to defaults (`abbrev: '???'`, `era: 'vanilla'`, `zone: 'unknown'`, `offWorld: false`). The properly-classified metadata is stored in git history; after fetch, restore it from the last commit using a Node script that merges old metadata into the regenerated manifest (see git history for restoration patterns in commits like 1815f52).
 
 Uses `tsx` to run TypeScript directly and the native `duckdb` Node.js package to write Parquet.
 
