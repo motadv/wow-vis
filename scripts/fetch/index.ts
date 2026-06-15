@@ -231,6 +231,24 @@ async function main() {
   await writeAffixManifest(affixManifest_final);
   console.log('Written public/data/affixes.json');
 
+  if (failed.length > 0) {
+    console.log('\n⚠️  Failed seasons:');
+    for (const { seasonId, error } of failed) {
+      if (seasonId !== -1) {
+        console.log(`   Season ${seasonId}: ${error}`);
+      } else {
+        console.log(`   Unknown: ${error}`);
+      }
+    }
+
+    if (failed.length === seasonIds.length) {
+      console.error('\n❌ All seasons failed. Exiting with error.');
+      process.exit(1);
+    } else {
+      console.log(`\n✅ ${seasons_final.length}/${seasonIds.length} seasons succeeded. Re-run fetch to retry failed seasons.`);
+    }
+  }
+
   console.log('\nDone. Remember to manually fill era, mapX, mapY, offWorld in dungeons.json.');
 }
 
