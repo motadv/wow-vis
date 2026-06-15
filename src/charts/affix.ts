@@ -3,6 +3,7 @@ import { getSecondaryAffixImpact, getAggregateSecondaryAffixImpact, getPrimaryAf
 import { subscribe, setState } from '../state.js';
 import { renderStreamGraph } from './affix-stream.js';
 import { renderRadialChart } from './affix-radial.js';
+import { MAX_SEASON } from '../config.js';
 import type { DungeonManifest, SecondaryAffixImpact } from '../types.js';
 
 function getAvailableSeasonsForDungeons(manifest: DungeonManifest, dungeonIds: number[]): number[] {
@@ -63,6 +64,25 @@ function renderSeasonSelector(container: HTMLElement, availableSeasons: number[]
   for (const seasonId of availableSeasons) {
     const btn = document.createElement('button');
     btn.textContent = `S${seasonId}`;
+
+    if (seasonId > MAX_SEASON) {
+      btn.disabled = true;
+      btn.title = 'Affix analysis not available for War Within seasons';
+      btn.style.cssText = `
+        padding:6px 12px;
+        font-size:12px;
+        border:1px solid #303030;
+        background:transparent;
+        color:#444;
+        border-radius:4px;
+        cursor:not-allowed;
+        opacity:0.4;
+        font-weight:600;
+      `;
+      buttonGroup.appendChild(btn);
+      continue;
+    }
+
     const isSelected = selectedSeasonId === seasonId;
     btn.style.cssText = `
       padding:6px 12px;
@@ -125,13 +145,14 @@ export async function initAffixChart(
     try {
       const availableSeasons = getAvailableSeasonsForDungeons(manifest, state.selectedDungeons);
 
-      // Determine effective season - use selected if available, otherwise aggregate
+      // Determine effective season - use selected if available and pre-S13, otherwise aggregate
+      const preS13Seasons = availableSeasons.filter(s => s <= MAX_SEASON);
       let effectiveSeasonId = state.selectedSeasonForArc;
-      if (effectiveSeasonId && !availableSeasons.includes(effectiveSeasonId)) {
+      if (effectiveSeasonId && (!availableSeasons.includes(effectiveSeasonId) || effectiveSeasonId > MAX_SEASON)) {
         effectiveSeasonId = null;
       }
-      if (!effectiveSeasonId && availableSeasons.length > 0) {
-        effectiveSeasonId = availableSeasons[0]; // Default to most recent available
+      if (!effectiveSeasonId && preS13Seasons.length > 0) {
+        effectiveSeasonId = preS13Seasons[0]; // Default to most recent pre-S13 available
       }
 
       container.innerHTML = '';
@@ -162,7 +183,8 @@ async function renderSingleDungeonView(
   const dungeon = manifest.dungeons.find(d => d.id === dungeonId);
   if (!dungeon) return;
 
-  const effectiveSeasonId = seasonId || availableSeasons[0] || manifest.seasons[manifest.seasons.length - 1]?.id || 6;
+  const preS13Available = availableSeasons.filter(s => s <= MAX_SEASON);
+  const effectiveSeasonId = (seasonId && seasonId <= MAX_SEASON ? seasonId : null) ?? preS13Available[0] ?? 6;
 
   // Title
   const title = document.createElement('div');
@@ -216,7 +238,8 @@ async function renderMultiDungeonView(
   seasonId: number | null,
   availableSeasons: number[] = [],
 ): Promise<void> {
-  const effectiveSeasonId = seasonId || availableSeasons[0] || manifest.seasons[manifest.seasons.length - 1]?.id || 6;
+  const preS13Available = availableSeasons.filter(s => s <= MAX_SEASON);
+  const effectiveSeasonId = (seasonId && seasonId <= MAX_SEASON ? seasonId : null) ?? preS13Available[0] ?? 6;
   const dungeonNames = dungeonIds.map(id => manifest.dungeons.find(d => d.id === id)?.name || `Dungeon ${id}`).join(', ');
 
   // Title
