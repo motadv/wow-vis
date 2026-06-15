@@ -13,6 +13,20 @@ if (!clientId || !clientSecret) {
 const SLEEP_MS = 35; // Reduced from 55ms to allow parallel fetching with 3x concurrency
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+type ProcessSeasonResult =
+  | {
+      success: true;
+      seasonId: number;
+      seasonMeta: SeasonMeta;
+      dungeonMap: Map<number, DungeonMeta>;
+      affixData: Record<number, Affix[]>;
+    }
+  | {
+      success: false;
+      seasonId: number;
+      error: string;
+    };
+
 async function discoverActiveDungeons(
   token: string,
   allDungeonIds: number[],
@@ -37,6 +51,104 @@ async function discoverActiveDungeons(
     console.log(`    Period ${periodId} returned no data, trying next period...`);
   }
   return [];
+}
+
+async function processSeason(
+  token: string,
+  seasonId: number,
+  allDungeonIds: number[],
+  dungeonNameById: Map<number, string>,
+  realmIds: number[],
+  dungeonMap: Map<number, DungeonMeta>,
+): Promise<ProcessSeasonResult> {
+  try {
+    const season = await fetchSeason(token, seasonId);
+
+    if (!season.end_timestamp || season.end_timestamp > Date.now()) {
+      console.log(`Skipping season ${seasonId} (${season.season_name}) — not yet ended`);
+      return { success: false, seasonId, error: 'Season not ended' };
+    }
+
+    console.log(`\nProcessing season ${seasonId}: ${season.season_name}`);
+    const periods = season.periods.map(p => p.id);
+
+    console.log(`  Discovering active dungeons across ${periods.length} periods on realm ${realmIds[0]}...`);
+    const activeDungeonIds = await discoverActiveDungeons(
+      token, allDungeonIds, periods, realmIds[0],
+    );
+    console.log(`  Active dungeons: ${activeDungeonIds.join(', ')}`);
+
+    if (activeDungeonIds.length === 0) {
+      console.log(`  ⚠️  No active dungeons found; skipping season`);
+      return { success: false, seasonId, error: 'No active dungeons' };
+    }
+
+    for (const dungeonId of activeDungeonIds) {
+      if (!dungeonMap.has(dungeonId)) {
+        dungeonMap.set(dungeonId, {
+          id: dungeonId,
+          name: dungeonNameById.get(dungeonId) ?? `Dungeon ${dungeonId}`,
+          abbrev: '???',
+          era: 'vanilla',
+          zone: 'unknown',
+          offWorld: false,
+        });
+      }
+    }
+
+    const seasonMeta: SeasonMeta = {
+      id: season.id,
+      name: season.season_name ?? `Season ${seasonId}`,
+      startTimestamp: season.start_timestamp,
+      dungeonIds: activeDungeonIds,
+    };
+
+    const allEntries: LeaderboardEntry[] = [];
+    const affixData: Record<number, Affix[]> = {};
+
+    for (const dungeonId of activeDungeonIds) {
+      for (const realmId of realmIds) {
+        for (const periodId of periods) {
+          try {
+            await sleep(SLEEP_MS);
+            const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
+            if (!lb.leading_groups || lb.leading_groups.length === 0) continue;
+
+            const entries = transformLeaderboard(lb, seasonId, realmId);
+            allEntries.push(...entries);
+
+            if (!affixData[periodId]) {
+              affixData[periodId] = (lb.keystone_affixes ?? []).map(affix => ({
+                id: affix.keystone_affix.id,
+                name: affix.keystone_affix.name,
+              }));
+            }
+          } catch (err) {
+            console.warn(`    Skip realm=${realmId} dungeon=${dungeonId} period=${periodId}: ${(err as Error).message}`);
+          }
+        }
+      }
+    }
+
+    console.log(`  Collected ${allEntries.length} entries — writing Parquet...`);
+    await writeParquet(seasonId, allEntries);
+    console.log(`  Written public/data/season-${seasonId}.parquet`);
+
+    return {
+      success: true,
+      seasonId,
+      seasonMeta,
+      dungeonMap: new Map(), // Empty map; dungeons were added to shared dungeonMap above
+      affixData,
+    };
+  } catch (err) {
+    console.error(`Season ${seasonId} failed: ${(err as Error).message}`);
+    return {
+      success: false,
+      seasonId,
+      error: (err as Error).message,
+    };
+  }
 }
 
 async function main() {
