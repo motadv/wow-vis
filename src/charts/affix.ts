@@ -1,439 +1,219 @@
-import * as d3 from 'd3';
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import type { AffixManifest } from '../types.js';
-import { getState, setState, subscribe } from '../state.js';
-import {
-  getDungeonAffixTrend,
-  getSeasonAffixSnapshot,
-  getAffixHeadToHead,
-  type AffixTrendRow,
-  type AffixSnapshotRow,
-  type AffixHeadToHeadRow,
-} from '../db/queries.js';
+import { getSecondaryAffixImpact, getAggregateSecondaryAffixImpact, getPrimaryAffixTrend } from '../db/queries.js';
+import { subscribe } from '../state.js';
+import { renderStreamGraph } from './affix-stream.js';
+import { renderRadialChart } from './affix-radial.js';
+import type { DungeonManifest, SecondaryAffixImpact } from '../types.js';
 
 export async function initAffixChart(
   conn: AsyncDuckDBConnection,
-  affixManifest: AffixManifest,
-  dungeonNames: Map<number, string>,
-  seasonIds: number[],
+  manifest: DungeonManifest,
 ): Promise<void> {
   const container = document.querySelector('#affix');
   if (!container) return;
 
   container.innerHTML = '';
 
-  // Build lens tabs
-  const tabsDiv = document.createElement('div');
-  tabsDiv.className = 'affix-tabs';
+  let lastSelectedDungeons: number[] = [];
+  let lastSeasonId: number | null = null;
 
-  const lenses = ['trend', 'snapshot', 'headtohead'] as const;
-  const lensLabels = { trend: 'Trend', snapshot: 'Snapshot', headtohead: 'Head-to-Head' };
-
-  for (const lens of lenses) {
-    const btn = document.createElement('button');
-    btn.className = 'affix-tab';
-    btn.textContent = lensLabels[lens];
-    btn.onclick = () => {
-      setState({
-        affixLens: lens,
-        affixFilters: { ...getState().affixFilters, secondaryAffixId: null, fortified: null },
-      });
-    };
-    tabsDiv.appendChild(btn);
-  }
-  container.appendChild(tabsDiv);
-
-  // Build filter controls
-  const filtersDiv = document.createElement('div');
-  filtersDiv.className = 'affix-filters';
-
-  // Dungeon selector
-  const dungeonSelect = document.createElement('select');
-  dungeonSelect.className = 'affix-select';
-  dungeonSelect.id = 'affix-dungeon-select';
-  const dungeonPlaceholder = document.createElement('option');
-  dungeonPlaceholder.value = '';
-  dungeonPlaceholder.textContent = 'Select dungeon…';
-  dungeonSelect.appendChild(dungeonPlaceholder);
-  const sortedDungeons = Array.from(dungeonNames.entries())
-    .sort((a, b) => a[1].localeCompare(b[1]));
-  for (const [dungeonId, name] of sortedDungeons) {
-    const opt = document.createElement('option');
-    opt.value = String(dungeonId);
-    opt.textContent = name;
-    dungeonSelect.appendChild(opt);
-  }
-  dungeonSelect.onchange = (e) => {
-    const val = (e.target as HTMLSelectElement).value;
-    setState({
-      affixFilters: { ...getState().affixFilters, dungeonId: val ? Number(val) : null },
-    });
-  };
-  filtersDiv.appendChild(dungeonSelect);
-
-  // Season selector
-  const seasonSelect = document.createElement('select');
-  seasonSelect.className = 'affix-select';
-  seasonSelect.id = 'affix-season-select';
-  const seasonPlaceholder = document.createElement('option');
-  seasonPlaceholder.value = '';
-  seasonPlaceholder.textContent = 'Current season';
-  seasonSelect.appendChild(seasonPlaceholder);
-  for (const sid of seasonIds) {
-    const opt = document.createElement('option');
-    opt.value = String(sid);
-    opt.textContent = `Season ${sid}`;
-    seasonSelect.appendChild(opt);
-  }
-  seasonSelect.onchange = (e) => {
-    const val = (e.target as HTMLSelectElement).value;
-    setState({
-      affixFilters: { ...getState().affixFilters, seasonId: val ? Number(val) : null },
-    });
-  };
-  filtersDiv.appendChild(seasonSelect);
-
-  // Fortified toggle (Head-to-Head only)
-  const fortToggle = document.createElement('button');
-  fortToggle.className = 'affix-toggle';
-  fortToggle.id = 'affix-fortified-toggle';
-  fortToggle.textContent = 'All';
-  let toggleState: null | true | false = null;
-  fortToggle.onclick = () => {
-    toggleState = toggleState === null ? true : toggleState === true ? false : null;
-    fortToggle.textContent = toggleState === null ? 'All' : toggleState ? 'Fortified' : 'Tyrannical';
-    setState({
-      affixFilters: { ...getState().affixFilters, fortified: toggleState },
-    });
-  };
-  filtersDiv.appendChild(fortToggle);
-
-  container.appendChild(filtersDiv);
-
-  // Chart area
-  const chartDiv = document.createElement('div');
-  chartDiv.className = 'affix-chart';
-  container.appendChild(chartDiv);
-
-  async function updateChart() {
-    const state = getState();
-    const { affixLens, affixFilters } = state;
-
-    // Update active tab
-    const tabs = tabsDiv.querySelectorAll('.affix-tab');
-    tabs.forEach((tab, i) => {
-      tab.classList.toggle('active', lenses[i] === affixLens);
-    });
-
-    // Update filter visibility
-    dungeonSelect.hidden = affixLens === 'snapshot';
-    seasonSelect.hidden = affixLens === 'trend';
-    fortToggle.hidden = affixLens !== 'headtohead';
-
-    // Sync selected dungeon from global state if not set
-    if (!affixFilters.dungeonId && state.selectedDungeon) {
-      setTimeout(() => {
-        setState({
-          affixFilters: { ...getState().affixFilters, dungeonId: state.selectedDungeon },
-        });
-      }, 0);
+  subscribe(async state => {
+    if (state.selectedDungeons.length === 0) {
+      container.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">Select one or more dungeons to analyze affixes.</div>';
+      return;
     }
 
-    // Sync selected season from arc if not set
-    const effectiveSeasonId = affixFilters.seasonId ?? state.selectedSeasonForArc;
+    if (state.selectedDungeons === lastSelectedDungeons && state.affixFilters.seasonId === lastSeasonId) {
+      return; // No change
+    }
+
+    lastSelectedDungeons = [...state.selectedDungeons];
+    lastSeasonId = state.affixFilters.seasonId;
 
     try {
-      if (affixLens === 'trend') {
-        await renderTrend(
-          conn,
-          affixManifest,
-          affixFilters.dungeonId,
-          seasonIds,
-          affixFilters.secondaryAffixId,
-          chartDiv,
-        );
-      } else if (affixLens === 'snapshot') {
-        await renderSnapshot(
-          conn,
-          affixManifest,
-          effectiveSeasonId,
-          affixFilters.secondaryAffixId,
-          dungeonNames,
-          chartDiv,
-        );
-      } else if (affixLens === 'headtohead') {
-        await renderHeadToHead(
-          conn,
-          affixManifest,
-          affixFilters.dungeonId,
-          effectiveSeasonId,
-          affixFilters.fortified,
-          chartDiv,
-        );
+      if (state.selectedDungeons.length === 1) {
+        await renderSingleDungeonView(container as HTMLElement, conn, manifest, state.selectedDungeons[0], state.affixFilters.seasonId);
+      } else {
+        await renderMultiDungeonView(container as HTMLElement, conn, manifest, state.selectedDungeons, state.affixFilters.seasonId);
       }
     } catch (err) {
       console.error('Affix chart error:', err);
+      container.innerHTML = '<div style="color:#ef4444;padding:20px;">Error loading affix data.</div>';
     }
-  }
-
-  // Initial render
-  await updateChart();
-
-  // Subscribe to state changes
-  subscribe(updateChart);
+  });
 }
 
-async function renderTrend(
-  conn: AsyncDuckDBConnection,
-  affixManifest: AffixManifest,
-  dungeonId: number | null,
-  seasonIds: number[],
-  secondaryAffixId: number | null,
+async function renderSingleDungeonView(
   container: HTMLElement,
-): Promise<AffixTrendRow[]> {
-  if (!dungeonId) {
-    container.innerHTML = '<div class="affix-empty-state">Select a dungeon to see Fortified vs Tyrannical trend across seasons</div>';
-    return [];
-  }
-
-  let periodIds: number[] | undefined;
-  if (secondaryAffixId) {
-    periodIds = [];
-    for (const seasonId of seasonIds) {
-      if (affixManifest[seasonId]) {
-        for (const [periodId, affixes] of Object.entries(affixManifest[seasonId])) {
-          if (affixes.some(a => a.id === secondaryAffixId)) {
-            periodIds.push(Number(periodId));
-          }
-        }
-      }
-    }
-  }
-
-  const data = await getDungeonAffixTrend(conn, dungeonId, seasonIds, periodIds);
-
-  // Group by season with fortified/tyrannical bars
-  const grouped = d3.group(data, d => d.season_id);
-  const chartData = Array.from(grouped, ([seasonId, rows]) => ({
-    seasonId,
-    fortified: rows.find(r => r.fortified)?.median_key ?? 0,
-    tyrannical: rows.find(r => !r.fortified)?.median_key ?? 0,
-  }));
-
-  renderGroupedBarChart(container, chartData, 'Season', 'season_id', ['fortified', 'tyrannical']);
-  return data;
-}
-
-async function renderSnapshot(
   conn: AsyncDuckDBConnection,
-  affixManifest: AffixManifest,
+  manifest: DungeonManifest,
+  dungeonId: number,
   seasonId: number | null,
-  secondaryAffixId: number | null,
-  dungeonNames: Map<number, string>,
-  container: HTMLElement,
-): Promise<AffixSnapshotRow[]> {
-  if (!seasonId) {
-    container.innerHTML = '<div class="affix-empty-state">No season selected</div>';
-    return [];
-  }
+): Promise<void> {
+  const dungeon = manifest.dungeons.find(d => d.id === dungeonId);
+  if (!dungeon) return;
 
-  let periodIds: number[] | undefined;
-  if (secondaryAffixId && affixManifest[seasonId]) {
-    periodIds = [];
-    for (const [periodId, affixes] of Object.entries(affixManifest[seasonId])) {
-      if (affixes.some(a => a.id === secondaryAffixId)) {
-        periodIds.push(Number(periodId));
-      }
-    }
-  }
-
-  const data = await getSeasonAffixSnapshot(conn, seasonId, periodIds);
-
-  // Group by dungeon with fortified/tyrannical bars
-  const grouped = d3.group(data, d => d.dungeon_id);
-  const chartData = Array.from(grouped, ([dungeonId, rows]) => ({
-    dungeonId,
-    name: dungeonNames.get(dungeonId) ?? `Dungeon ${dungeonId}`,
-    fortified: rows.find(r => r.fortified)?.median_key ?? 0,
-    tyrannical: rows.find(r => !r.fortified)?.median_key ?? 0,
-  }));
-
-  renderGroupedBarChart(container, chartData, 'Dungeon', 'dungeonId', ['fortified', 'tyrannical']);
-  return data;
-}
-
-async function renderHeadToHead(
-  conn: AsyncDuckDBConnection,
-  affixManifest: AffixManifest,
-  dungeonId: number | null,
-  seasonId: number | null,
-  fortified: boolean | null,
-  container: HTMLElement,
-): Promise<AffixHeadToHeadRow[]> {
-  if (!dungeonId || !seasonId) {
-    container.innerHTML = '<div class="affix-empty-state">Select a dungeon and season to compare secondary affixes</div>';
-    return [];
-  }
-
-  if (!affixManifest[seasonId]) {
-    container.innerHTML = '<div class="affix-empty-state">No affix data for this season</div>';
-    return [];
-  }
-
-  // Build periodIdsByAffix map
-  const allAffixes = new Map<number, number[]>();
-  for (const [periodId, affixes] of Object.entries(affixManifest[seasonId])) {
-    const isFortified = affixes.some(a => a.id === 10);
-    // Skip this period if fortified filter doesn't match
-    if (fortified !== null && isFortified !== fortified) continue;
-
-    for (const affix of affixes) {
-      if (!allAffixes.has(affix.id)) allAffixes.set(affix.id, []);
-      allAffixes.get(affix.id)!.push(Number(periodId));
-    }
-  }
-
-  const data = await getAffixHeadToHead(conn, dungeonId, seasonId, allAffixes);
-
-  // Map affix IDs to names
-  const affixNameMap = new Map<number, string>();
-  for (const affixes of Object.values(affixManifest[seasonId])) {
-    for (const affix of affixes) {
-      affixNameMap.set(affix.id, affix.name);
-    }
-  }
-
-  const chartData = data.map(d => ({
-    affixId: d.affix_id,
-    name: affixNameMap.get(d.affix_id) ?? `Affix ${d.affix_id}`,
-    median_key: d.median_key,
-  }));
-
-  renderBarChart(container, chartData, 'Affix');
-  return data;
-}
-
-function renderGroupedBarChart(
-  container: HTMLElement,
-  data: any[],
-  xLabel: string,
-  xKey: string,
-  categories: string[],
-): void {
-  const width = container.clientWidth || 600;
-  const height = container.clientHeight || 300;
-  const margin = { top: 20, right: 20, bottom: 30, left: 50 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const effectiveSeasonId = seasonId || manifest.seasons[manifest.seasons.length - 1]?.id || 6;
 
   container.innerHTML = '';
 
-  const svg = d3.select(container)
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .append('g')
-    .attr('transform', `translate(${margin.left},${margin.top})`);
+  // Title
+  const title = document.createElement('div');
+  title.style.cssText = 'padding:16px;font-size:16px;font-weight:bold;color:#e4e4e7;border-bottom:1px solid #27272a;';
+  title.innerHTML = `${dungeon.name} — Affix Impact Analysis (Season ${effectiveSeasonId})`;
+  container.appendChild(title);
 
-  const x0 = d3.scaleBand()
-    .domain(data.map(d => String(d[xKey])))
-    .range([0, innerWidth])
-    .padding(0.2);
+  // Stream graph section
+  const streamSection = document.createElement('div');
+  streamSection.style.cssText = 'padding:16px;border-bottom:1px solid #27272a;';
 
-  const x1 = d3.scaleBand()
-    .domain(categories)
-    .range([0, x0.bandwidth()])
-    .padding(0.1);
+  const streamLabel = document.createElement('div');
+  streamLabel.style.cssText = 'font-size:12px;color:#999;text-transform:uppercase;margin-bottom:12px;';
+  streamLabel.textContent = 'Primary Affix Trend (Fortified vs Tyrannical)';
+  streamSection.appendChild(streamLabel);
 
-  const y = d3.scaleLinear()
-    .domain([0, Math.max(...data.flatMap(d => categories.map(c => d[c] ?? 0)))])
-    .range([innerHeight, 0]);
+  const streamChart = document.createElement('div');
+  streamChart.style.cssText = 'height:180px;';
+  streamSection.appendChild(streamChart);
+  container.appendChild(streamSection);
 
-  const color = d3.scaleOrdinal()
-    .domain(categories)
-    .range(['#1f77b4', '#ff7f0e']);
+  // Radial section
+  const radialSection = document.createElement('div');
+  radialSection.style.cssText = 'padding:16px;';
 
-  // Draw bars
-  svg.selectAll('g.category')
-    .data(categories)
-    .join('g')
-    .attr('class', 'category')
-    .attr('fill', d => color(d) as string)
-    .selectAll('rect')
-    .data(cat => data.map(d => ({ ...d, category: cat })))
-    .join('rect')
-    .attr('x', d => x0(String(d[xKey]))! + x1(d.category)!)
-    .attr('y', d => y(d[d.category] ?? 0))
-    .attr('width', x1.bandwidth())
-    .attr('height', d => innerHeight - y(d[d.category] ?? 0))
-    .attr('title', d => `${d.category}: ${d[d.category]?.toFixed(1)}`);
+  const radialLabel = document.createElement('div');
+  radialLabel.style.cssText = 'font-size:12px;color:#999;text-transform:uppercase;margin-bottom:12px;';
+  radialLabel.textContent = 'Secondary Affix Impact';
+  radialSection.appendChild(radialLabel);
 
-  // Axes
-  svg.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(x0));
+  const radialChart = document.createElement('div');
+  radialChart.style.cssText = 'display:flex;justify-content:center;';
+  radialSection.appendChild(radialChart);
+  container.appendChild(radialSection);
 
-  svg.append('g')
-    .call(d3.axisLeft(y));
+  // Load data and render
+  const [streamData, affixData] = await Promise.all([
+    getPrimaryAffixTrend(conn, [dungeonId], effectiveSeasonId),
+    getSecondaryAffixImpact(conn, dungeonId, effectiveSeasonId),
+  ]);
 
-  svg.append('text')
-    .attr('x', innerWidth / 2)
-    .attr('y', innerHeight + margin.bottom - 5)
-    .attr('text-anchor', 'middle')
-    .text(xLabel);
+  renderStreamGraph(streamChart, streamData, streamChart.clientWidth, 180);
+  renderRadialChart(radialChart, affixData, 250);
 }
 
-function renderBarChart(
+async function renderMultiDungeonView(
   container: HTMLElement,
-  data: Array<{ name: string; median_key: number }>,
-  xLabel: string,
-): void {
-  const width = container.clientWidth || 600;
-  const height = container.clientHeight || 300;
-  const margin = { top: 20, right: 20, bottom: 30, left: 50 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  conn: AsyncDuckDBConnection,
+  manifest: DungeonManifest,
+  dungeonIds: number[],
+  seasonId: number | null,
+): Promise<void> {
+  const effectiveSeasonId = seasonId || manifest.seasons[manifest.seasons.length - 1]?.id || 6;
+  const dungeonNames = dungeonIds.map(id => manifest.dungeons.find(d => d.id === id)?.name || `Dungeon ${id}`).join(', ');
 
   container.innerHTML = '';
 
-  const svg = d3.select(container)
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .append('g')
-    .attr('transform', `translate(${margin.left},${margin.top})`);
+  // Title
+  const title = document.createElement('div');
+  title.style.cssText = 'padding:16px;font-size:16px;font-weight:bold;color:#e4e4e7;border-bottom:1px solid #27272a;';
+  title.innerHTML = `${dungeonNames} — Aggregate Affix Analysis (Season ${effectiveSeasonId})`;
+  container.appendChild(title);
 
-  const x = d3.scaleBand()
-    .domain(data.map(d => d.name))
-    .range([0, innerWidth])
-    .padding(0.2);
+  // Stream graph section
+  const streamSection = document.createElement('div');
+  streamSection.style.cssText = 'padding:16px;border-bottom:1px solid #27272a;';
 
-  const y = d3.scaleLinear()
-    .domain([0, Math.max(...data.map(d => d.median_key))])
-    .range([innerHeight, 0]);
+  const streamLabel = document.createElement('div');
+  streamLabel.style.cssText = 'font-size:12px;color:#999;text-transform:uppercase;margin-bottom:12px;';
+  streamLabel.textContent = 'Primary Affix Trend';
+  streamSection.appendChild(streamLabel);
 
-  // Draw bars
-  svg.selectAll('rect')
-    .data(data)
-    .join('rect')
-    .attr('x', d => x(d.name)!)
-    .attr('y', d => y(d.median_key))
-    .attr('width', x.bandwidth())
-    .attr('height', d => innerHeight - y(d.median_key))
-    .attr('fill', '#1f77b4')
-    .attr('title', d => `${d.name}: ${d.median_key.toFixed(1)}`);
+  const streamChart = document.createElement('div');
+  streamChart.style.cssText = 'height:180px;';
+  streamSection.appendChild(streamChart);
+  container.appendChild(streamSection);
 
-  // Axes
-  svg.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(x));
+  // Aggregate radial section
+  const aggregateSection = document.createElement('div');
+  aggregateSection.style.cssText = 'padding:16px;border-bottom:1px solid #27272a;';
 
-  svg.append('g')
-    .call(d3.axisLeft(y));
+  const aggregateLabel = document.createElement('div');
+  aggregateLabel.style.cssText = 'font-size:12px;color:#999;text-transform:uppercase;margin-bottom:4px;';
+  aggregateLabel.textContent = 'Aggregate Secondary Affix Impact';
+  aggregateSection.appendChild(aggregateLabel);
 
-  svg.append('text')
-    .attr('x', innerWidth / 2)
-    .attr('y', innerHeight + margin.bottom - 5)
-    .attr('text-anchor', 'middle')
-    .text(xLabel);
+  const aggregateSublabel = document.createElement('div');
+  aggregateSublabel.style.cssText = 'font-size:11px;color:#666;margin-bottom:12px;font-style:italic;';
+  aggregateSublabel.textContent = '(Average across selected dungeons)';
+  aggregateSection.appendChild(aggregateSublabel);
+
+  const aggregateChart = document.createElement('div');
+  aggregateChart.style.cssText = 'display:flex;justify-content:center;';
+  aggregateSection.appendChild(aggregateChart);
+  container.appendChild(aggregateSection);
+
+  // Individual radials section
+  const individualsSection = document.createElement('div');
+  individualsSection.style.cssText = 'padding:16px;';
+
+  const individualsLabel = document.createElement('div');
+  individualsLabel.style.cssText = 'font-size:12px;color:#999;text-transform:uppercase;margin-bottom:12px;';
+  individualsLabel.textContent = 'Individual Dungeon Impact';
+  individualsSection.appendChild(individualsLabel);
+
+  const individualsGrid = document.createElement('div');
+  individualsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;';
+  individualsSection.appendChild(individualsGrid);
+  container.appendChild(individualsSection);
+
+  // Load data and render
+  const [streamData, aggregateDataRaw, ...individualDataArray] = await Promise.all([
+    getPrimaryAffixTrend(conn, dungeonIds, effectiveSeasonId),
+    getAggregateSecondaryAffixImpact(conn, dungeonIds, effectiveSeasonId),
+    ...dungeonIds.map(dId => getSecondaryAffixImpact(conn, dId, effectiveSeasonId)),
+  ]);
+
+  // Transform aggregate data to match SecondaryAffixImpact type
+  const aggregateData: SecondaryAffixImpact[] = aggregateDataRaw.map(d => ({
+    affixId: d.affixId,
+    affixName: d.affixName,
+    impactDelta: d.averageImpactDelta,
+  }));
+
+  renderStreamGraph(streamChart, streamData, streamChart.clientWidth, 180);
+  renderRadialChart(aggregateChart, aggregateData, 220);
+
+  // Render individual radials
+  for (let i = 0; i < Math.min(dungeonIds.length, 3); i++) {
+    const dungeonId = dungeonIds[i];
+    const dungeon = manifest.dungeons.find(d => d.id === dungeonId);
+    const individualData = individualDataArray[i];
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#1a1a2e;padding:12px;border-radius:4px;';
+
+    const cardTitle = document.createElement('div');
+    cardTitle.style.cssText = 'font-size:12px;color:#a1a1aa;margin-bottom:8px;font-weight:600;';
+    cardTitle.textContent = dungeon?.name || `Dungeon ${dungeonId}`;
+    card.appendChild(cardTitle);
+
+    const cardChart = document.createElement('div');
+    cardChart.style.cssText = 'display:flex;justify-content:center;';
+    card.appendChild(cardChart);
+
+    individualsGrid.appendChild(card);
+
+    renderRadialChart(cardChart, individualData, 160);
+  }
+
+  // "View all" link if more than 3
+  if (dungeonIds.length > 3) {
+    const expandLink = document.createElement('div');
+    expandLink.style.cssText = 'grid-column:1/-1;text-align:center;padding:12px;font-size:12px;color:#3b82f6;cursor:pointer;text-decoration:underline;';
+    expandLink.textContent = `View all ${dungeonIds.length} dungeons`;
+    expandLink.onclick = () => {
+      console.log('Expand to full grid');
+    };
+    individualsGrid.appendChild(expandLink);
+  }
 }

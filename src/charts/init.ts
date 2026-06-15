@@ -1,4 +1,4 @@
-import { initDB, getConnection, getAffixManifest } from '../db/init.js';
+import { initDB, getConnection } from '../db/init.js';
 import { initMap } from './map.js';
 import { initDungeonBrowser } from './dungeon-browser.js';
 import { initArc, setKeyDomain } from './arc.js';
@@ -13,7 +13,6 @@ export default async function initViz(): Promise<void> {
   const manifest: DungeonManifest = await response.json();
 
   const conn = getConnection();
-  const affixManifest = getAffixManifest();
 
   initMap(document.getElementById('map')!, manifest);
   initArc(document.getElementById('arc')!, manifest, conn);
@@ -23,6 +22,5 @@ export default async function initViz(): Promise<void> {
   const { minKey, maxKey } = await getGlobalKeyRange(conn, seasonIds);
   setKeyDomain(Math.floor(minKey) - 3, Math.ceil(maxKey) + 3);
 
-  const dungeonNames = new Map(manifest.dungeons.map(d => [d.id, d.name]));
-  await initAffixChart(conn, affixManifest, dungeonNames, seasonIds);
+  await initAffixChart(conn, manifest);
 }
