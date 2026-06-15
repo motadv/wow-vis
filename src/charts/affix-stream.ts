@@ -28,75 +28,43 @@ export function renderStreamGraph(
     .append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
-  // Detect if this is War Within data (both affixes present) or pre-War Within (split affixes)
-  const isWarWithin = data.some(d => 'combinedMedian' in d && (d as any).combinedMedian !== undefined);
-
-  // Scales
   const xScale = d3.scaleLinear()
     .domain(d3.extent(data, d => d.period) as [number, number])
     .range([0, innerWidth]);
 
-  let yScale: d3.ScaleLinear<number, number>;
-  let line: d3.Line<PrimaryAffixTrendPoint>;
-  let legendInfo: { label: string; color: string }[];
+  const maxMedian = Math.max(...data.map(d => Math.max(d.fortifiedMedian, d.tyrannicalMedian)));
+  const yScale = d3.scaleLinear()
+    .domain([0, maxMedian * 1.1])
+    .range([innerHeight, 0]);
 
-  if (isWarWithin) {
-    // War Within: Single line showing combined median
-    const maxMedian = Math.max(...data.map(d => (d as any).combinedMedian || 0));
-    yScale = d3.scaleLinear()
-      .domain([0, maxMedian * 1.1])
-      .range([innerHeight, 0]);
+  const fortifiedArea = d3.area<PrimaryAffixTrendPoint>()
+    .x(d => xScale(d.period))
+    .y0(innerHeight)
+    .y1(d => yScale(d.fortifiedMedian));
 
-    line = d3.line<PrimaryAffixTrendPoint>()
-      .x(d => xScale(d.period))
-      .y(d => yScale((d as any).combinedMedian || 0));
+  const tyrannicalArea = d3.area<PrimaryAffixTrendPoint>()
+    .x(d => xScale(d.period))
+    .y0(d => yScale(d.fortifiedMedian))
+    .y1(d => yScale(d.fortifiedMedian + d.tyrannicalMedian));
 
-    // Draw single line
-    svg.append('path')
-      .datum(data)
-      .attr('d', line)
-      .attr('fill', 'none')
-      .attr('stroke', '#8b5cf6')
-      .attr('stroke-width', 2)
-      .attr('class', 'trend-line');
+  svg.append('path')
+    .datum(data)
+    .attr('d', fortifiedArea)
+    .attr('fill', '#3b82f6')
+    .attr('opacity', 0.7)
+    .attr('class', 'stream-fortified');
 
-    legendInfo = [{ label: 'Median Key Level (both affixes active)', color: '#8b5cf6' }];
-  } else {
-    // Pre-War Within: Stacked area chart for Fortified vs Tyrannical
-    const maxMedian = Math.max(...data.map(d => Math.max(d.fortifiedMedian, d.tyrannicalMedian)));
-    yScale = d3.scaleLinear()
-      .domain([0, maxMedian * 1.1])
-      .range([innerHeight, 0]);
+  svg.append('path')
+    .datum(data)
+    .attr('d', tyrannicalArea)
+    .attr('fill', '#f97316')
+    .attr('opacity', 0.7)
+    .attr('class', 'stream-tyrannical');
 
-    const fortifiedArea = d3.area<PrimaryAffixTrendPoint>()
-      .x(d => xScale(d.period))
-      .y0(innerHeight)
-      .y1(d => yScale(d.fortifiedMedian));
-
-    const tyrannicalArea = d3.area<PrimaryAffixTrendPoint>()
-      .x(d => xScale(d.period))
-      .y0(d => yScale(d.fortifiedMedian))
-      .y1(d => yScale(d.fortifiedMedian + d.tyrannicalMedian));
-
-    svg.append('path')
-      .datum(data)
-      .attr('d', fortifiedArea)
-      .attr('fill', '#3b82f6')
-      .attr('opacity', 0.7)
-      .attr('class', 'stream-fortified');
-
-    svg.append('path')
-      .datum(data)
-      .attr('d', tyrannicalArea)
-      .attr('fill', '#f97316')
-      .attr('opacity', 0.7)
-      .attr('class', 'stream-tyrannical');
-
-    legendInfo = [
-      { label: 'Fortified', color: '#3b82f6' },
-      { label: 'Tyrannical', color: '#f97316' },
-    ];
-  }
+  const legendInfo = [
+    { label: 'Fortified', color: '#3b82f6' },
+    { label: 'Tyrannical', color: '#f97316' },
+  ];
 
   // Axes
   svg.append('g')
