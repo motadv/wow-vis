@@ -28,33 +28,37 @@ Replace the current "heatmap" view with a unified dungeon selection tool. Users 
 
 ### Data & Display
 
-**Organization:** Dungeons grouped by expansion (Dragonflight, Nerub-ar, etc.)
+**Organization:** Dungeons grouped by season (Season 9, Season 8, etc.), sorted by difficulty within each season (hardest first).
 
-**Per-dungeon display:**
+**Per-dungeon display (per row):**
 - Dungeon name
-- Overall difficulty score (median keystone level, aggregated across season)
-- **Fortified vs Tyrannical split** — visual encoding showing relative difficulty of each affix
-  - Stacked bar, side-by-side bars, or split indicator
+- Difficulty score (median keystone level for that dungeon in that season)
+- **Fortified vs Tyrannical split** — stacked/side-by-side bar showing relative difficulty of each affix
   - Both affixes equally prominent
-- Dungeon era/tier visual indicator (color, icon, or badge)
+  - Bar length proportional to difficulty
+- Era/dungeon category visual indicator (color, icon, or badge)
 - Selection state indicator (checkbox, outline, highlight, or toggle state)
 
-**Visual format options:**
-- **List/row layout** — scrollable rows, one dungeon per row, expansion headers
-- **Card grid** — 2–3 cards per row, grouped by expansion below
+**Visual format:**
+- **Swimlane layout** (adapting current heatmap structure)
+  - Season headers (Season 9, Season 8, etc.)
+  - Under each season: dungeon rows sorted by difficulty (highest to lowest)
+  - Each row contains: dungeon name | F/T split bar | difficulty score | selection indicator
+  - Scrollable vertically through seasons
+  - Similar to current heatmap but supporting multi-selection
 
 ### Interaction
 
-- **Click to toggle selection** — single click toggles selection state (selected ↔ unselected)
-- **Visual feedback** — selected dungeons have persistent visual indicator
+- **Click to toggle selection** — click a dungeon row to toggle its selection state (selected ↔ unselected)
+  - Visual feedback: selected rows highlighted, checkbox/outline state updates
+  - Can select multiple dungeons across different seasons
 - **Smart routing:**
-  - If 1 dungeon selected → arc chart updates immediately
-  - If 2+ dungeons selected → affix panel shows drill-down view
-  - Deselecting all dungeons clears both arc and affix views
-- **Filters/controls** (optional, top of browser):
-  - Season filter (dropdown)
-  - Expansion filter (dropdown or tabs)
-  - Reset/clear all selections
+  - If 1 dungeon selected → arc chart updates to show that dungeon's progression
+  - If 2+ dungeons selected → affix panel shows drill-down view with aggregate + individual radials
+  - Deselecting all dungeons clears both arc and affix views (return to empty state)
+- **Controls:**
+  - "Reset" or "Clear all" button — deselect all dungeons at once
+  - (Optional) Season filter to collapse/expand seasons
 
 ### Data Source
 
