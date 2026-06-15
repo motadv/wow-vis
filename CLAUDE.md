@@ -8,10 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev          # Start dev server with hot reload
 npm run build        # Type-check (tsc) then bundle (vite build)
 npm run preview      # Preview the production build locally
-npm run fetch        # Run offline Blizzard API data collection script
+npm run fetch        # Run offline Blizzard API data collection script (~2-3 hours)
 npm run test         # Run unit tests (Vitest)
 npm run test:watch   # Run tests in watch mode
 ```
+
+**Before running fetch after code changes:** `rm public/data/season-*.parquet` to clear old/corrupted files.
 
 ## Environment
 
@@ -39,11 +41,15 @@ Two distinct runtimes — an offline data pipeline and an in-browser viz — sha
 
 ### Offline pipeline (`scripts/fetch/`)
 
-Run once via `npm run fetch`. Authenticates with Blizzard OAuth, iterates all completed Mythic+ seasons, fetches leaderboard data for a sample of US connected realms, and writes:
+**Runtime:** ~2-3 hours with parallel batching (3 seasons at a time, 35ms API sleep), ~7+ hours sequential. Do not interrupt mid-run.
+
+Run once via `npm run fetch`. Authenticates with Blizzard OAuth, batches seasons for parallel processing, fetches leaderboard data for a sample of US connected realms, and writes:
 - `public/data/season-N.parquet` — one file per completed season
 - `public/data/dungeons.json` — dungeon manifest. After generation, manually set `era`, `zone`, `offWorld` per dungeon and `x`/`y` per zone anchor. See `docs/data-decisions.md` for all classification decisions already made.
 
 Uses `tsx` to run TypeScript directly and the native `duckdb` Node.js package to write Parquet.
+
+**DuckDB data integrity:** When writing Parquet files, use `db.close(callback)` with callback to ensure writes are flushed before returning. Synchronous `db.close()` can leave files incomplete ("no magic bytes" error). See `scripts/fetch/write.ts:writeParquet()`.
 
 ### In-browser viz (`src/`)
 
