@@ -62,6 +62,24 @@ export interface WeeklyArcRow {
   median_key: number;
 }
 
+export interface SecondaryAffixImpact {
+  affixId: number;
+  affixName: string;
+  impactDelta: number;
+}
+
+export interface PrimaryAffixTrendPoint {
+  period: number;
+  fortifiedMedian: number;
+  tyrannicalMedian: number;
+}
+
+export interface AffixAnalysisState {
+  selectedDungeonIds: number[];
+  seasonId: number | null;
+  fortifiedFilter: boolean | null; // null = both, true = fortified only, false = tyrannical only
+}
+
 // Application state
 
 export interface AppState {
