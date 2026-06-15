@@ -325,7 +325,91 @@ git commit -m "type: add affix analysis data structures"
 
 ## Phase 2: Visualization Components
 
-### Task 4: Create stream graph renderer (affix-stream.ts)
+### Task 4: Rename heatmap.ts to dungeon-browser.ts
+
+**Files:**
+- Rename: `src/charts/heatmap.ts` → `src/charts/dungeon-browser.ts`
+- Modify: `src/charts/init.ts` (update import)
+- Modify: `src/style.css` (rename heatmap-* classes to dungeon-browser-*)
+
+**The old "heatmap" view is now a dungeon selection browser. Renaming clarifies its role.**
+
+- [ ] **Step 1: Rename the file**
+
+```bash
+git mv src/charts/heatmap.ts src/charts/dungeon-browser.ts
+```
+
+- [ ] **Step 2: Update import in charts/init.ts**
+
+In `src/charts/init.ts`, replace:
+
+```typescript
+import { initHeatmap } from './heatmap.js';
+```
+
+with:
+
+```typescript
+import { initDungeonBrowser } from './dungeon-browser.js';
+```
+
+And replace the function call:
+
+```typescript
+initHeatmap(heatmapContainer, manifest, conn);
+```
+
+with:
+
+```typescript
+initDungeonBrowser(heatmapContainer, manifest, conn);
+```
+
+- [ ] **Step 3: Update function name in dungeon-browser.ts**
+
+In `src/charts/dungeon-browser.ts`, rename the export:
+
+```typescript
+export function initDungeonBrowser(
+  container: HTMLElement,
+  manifest: DungeonManifest,
+  conn: AsyncDuckDBConnection,
+): void {
+  // ... existing code ...
+}
+```
+
+- [ ] **Step 4: Rename CSS classes**
+
+In `src/style.css`, update all heatmap-related class names:
+
+Replace:
+```css
+.heatmap-title → .dungeon-browser-title
+.heatmap-subtitle → .dungeon-browser-subtitle
+.heatmap-lanes → .dungeon-browser-lanes
+.heatmap-legend → .dungeon-browser-legend
+.expansion-header → .expansion-header (keep as-is, used by both)
+```
+
+Also update the HTML ID reference in the div:
+```css
+#heatmap {
+  /* styles stay the same, ID can remain for backward compat */
+}
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add -A
+git commit -m "refactor: rename heatmap.ts to dungeon-browser.ts to clarify new multi-select role"
+```
+
+---
+
+### Task 5: Create stream graph renderer (affix-stream.ts)
 
 **Files:**
 - Create: `src/charts/affix-stream.ts`
@@ -334,7 +418,7 @@ git commit -m "type: add affix analysis data structures"
 
 - [ ] **Step 1: Create affix-stream.ts with basic structure**
 
-Create `src/charts/affix-stream.ts`:
+Create `src/charts/affix-stream.ts` (all tasks below are renumbered; this is now Task 5):
 
 ```typescript
 import * as d3 from 'd3';
@@ -451,7 +535,7 @@ git commit -m "feat: create stream graph renderer for primary affix trend visual
 
 ---
 
-### Task 5: Create radial chart renderer (affix-radial.ts)
+### Task 6: Create radial chart renderer (affix-radial.ts)
 
 **Files:**
 - Create: `src/charts/affix-radial.ts`
@@ -587,7 +671,7 @@ git commit -m "feat: create radial chart renderer for secondary affix impact vis
 
 ---
 
-### Task 6: Rewrite affix.ts with new drill-down logic
+### Task 7: Rewrite affix.ts with new drill-down logic
 
 **Files:**
 - Modify: `src/charts/affix.ts` (complete rewrite)
@@ -824,16 +908,16 @@ git commit -m "refactor: rewrite affix panel with dynamic drill-down logic (1 vs
 
 ---
 
-### Task 7: Add multi-select support to heatmap.ts
+### Task 8: Add multi-select support to dungeon-browser.ts
 
 **Files:**
-- Modify: `src/charts/heatmap.ts`
+- Modify: `src/charts/dungeon-browser.ts`
 
 **Enhance the dungeon ranking view to support multi-select and display F/T split bars.**
 
 - [ ] **Step 1: Update tile click handler**
 
-In `src/charts/heatmap.ts`, find the existing tile click handler (around line 80-100). Replace with:
+In `src/charts/dungeon-browser.ts`, find the existing tile click handler (around line 80-100). Replace with:
 
 ```typescript
 // Replace the existing click handler with:
@@ -907,13 +991,13 @@ laneLabel.appendChild(splitContainer);
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/charts/heatmap.ts
+git add src/charts/dungeon-browser.ts
 git commit -m "feat: add multi-select support and F/T split visualization to dungeon browser"
 ```
 
 ---
 
-### Task 8: Update charts/init.ts initialization sequence
+### Task 9: Update charts/init.ts initialization sequence
 
 **Files:**
 - Modify: `src/charts/init.ts`
@@ -950,7 +1034,7 @@ git commit -m "refactor: update chart initialization sequence for new affix pane
 
 ## Phase 3: Layout & Styling
 
-### Task 9: Restructure index.html for scrollable layout
+### Task 10: Restructure index.html for scrollable layout
 
 **Files:**
 - Modify: `index.html`
@@ -992,7 +1076,7 @@ git commit -m "refactor: restructure dashboard layout to scrollable full-width s
 
 ---
 
-### Task 10: Update CSS for new layout
+### Task 11: Update CSS for new layout
 
 **Files:**
 - Modify: `src/style.css`
@@ -1126,7 +1210,7 @@ git commit -m "style: update layout and affix panel CSS for scrollable dashboard
 
 ## Phase 4: Integration & Testing
 
-### Task 11: Test dungeon selection → routing
+### Task 12: Test dungeon selection → routing
 
 **Files:**
 - Test in browser (manual testing)
@@ -1167,7 +1251,7 @@ If any issues found, note them for debugging in next task.
 
 ---
 
-### Task 12: Test radial chart rendering
+### Task 13: Test radial chart rendering
 
 **Files:**
 - Test in browser (manual testing)
@@ -1205,7 +1289,7 @@ Note any rendering issues, hover misbehaviors, or visual glitches.
 
 ---
 
-### Task 13: Test stream graph rendering
+### Task 14: Test stream graph rendering
 
 **Files:**
 - Test in browser (manual testing)
@@ -1242,7 +1326,7 @@ Note any visual issues or axis labeling problems.
 
 ---
 
-### Task 14: Performance and polish check
+### Task 15: Performance and polish check
 
 **Files:**
 - Test in browser (manual testing)
@@ -1285,11 +1369,11 @@ Note visual bugs, missing styling, or interaction problems to address in refinem
 ## Self-Review Checklist
 
 ✓ **Spec coverage:** 
-- Dungeon Browser (swimlane with multi-select) → Tasks 7
-- Affix Panel drill-down → Tasks 6
-- Stream graph visualization → Tasks 4, 13
-- Radial chart visualization → Tasks 5, 12
-- Layout restructuring → Tasks 9, 10
+- Dungeon Browser (swimlane with multi-select) → Tasks 4, 8
+- Affix Panel drill-down → Task 7
+- Stream graph visualization → Tasks 5, 14
+- Radial chart visualization → Tasks 6, 13
+- Layout restructuring → Tasks 10, 11
 - Data processing (no fetch changes) → Tasks 1-3
 
 ✓ **No placeholders:** All tasks have concrete code, exact file paths, and test steps
@@ -1300,7 +1384,7 @@ Note visual bugs, missing styling, or interaction problems to address in refinem
 
 ---
 
-**Plan complete!**
+**Plan complete! 15 tasks across 4 phases.**
 
 Two execution options:
 
