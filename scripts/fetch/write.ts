@@ -22,8 +22,11 @@ export async function writeParquet(seasonId: number, entries: LeaderboardEntry[]
     db.run(
       `COPY (SELECT * FROM read_ndjson_auto('${tmpPath}')) TO '${outPath}' (FORMAT PARQUET)`,
       (err: Error | null) => {
-        db.close();
-        if (err) reject(err); else resolve();
+        if (err) {
+          db.close(() => reject(err));
+        } else {
+          db.close(() => resolve());
+        }
       },
     );
   });
