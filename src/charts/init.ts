@@ -15,8 +15,8 @@ export default async function initViz(): Promise<void> {
   const conn = getConnection();
 
   initMap(document.getElementById('map')!, manifest);
-  initArc(document.getElementById('arc')!, manifest, conn);
   await initDungeonBrowser(document.getElementById('heatmap')!, manifest, conn);
+  initArc(document.getElementById('arc')!, manifest, conn);
 
   const seasonIds = manifest.seasons.filter(s => s.dungeonIds.length > 0).map(s => s.id);
   const { minKey, maxKey } = await getGlobalKeyRange(conn, seasonIds);
