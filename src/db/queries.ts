@@ -1,5 +1,6 @@
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import type { RankMatrixRow, WeeklyArcRow } from '../types.js';
+import { getAffixManifest } from './init.js';
 
 export interface AffixTrendRow {
   season_id: number;
@@ -128,5 +129,132 @@ export async function getAffixHeadToHead(
   return result.toArray().map(r => ({
     affix_id: Number(r.affix_id),
     median_key: Number(r.median_key),
+  }));
+}
+
+export async function getSecondaryAffixImpact(
+  conn: AsyncDuckDBConnection,
+  dungeonId: number,
+  seasonId: number,
+  periodIds?: number[],
+): Promise<Array<{ affixId: number; affixName: string; impactDelta: number }>> {
+  const manifest = getAffixManifest();
+  const allPeriods = periodIds || Object.keys(manifest[seasonId] || {}).map(Number);
+
+  if (allPeriods.length === 0) return [];
+
+  const baselineQuery = `
+    SELECT MEDIAN(keystone_level) as baseline
+    FROM leaderboard_${seasonId}
+    WHERE dungeon_id = ${dungeonId} AND period IN (${allPeriods.join(',')})
+  `;
+  const baselineResult = await conn.query(baselineQuery);
+  const baseline = (baselineResult.toArray()[0]?.baseline as number) || 0;
+
+  const affixSet = new Map<number, string>();
+  for (const affixes of Object.values(manifest[seasonId] || {})) {
+    for (const affix of affixes) {
+      if (affix.id !== 10 && affix.id !== 9) {
+        affixSet.set(affix.id, affix.name);
+      }
+    }
+  }
+
+  const results: Array<{ affixId: number; affixName: string; impactDelta: number }> = [];
+
+  for (const [affixId, affixName] of affixSet.entries()) {
+    const affixPeriods: number[] = [];
+    for (const [periodId, affixes] of Object.entries(manifest[seasonId] || {})) {
+      if (affixes.some(a => a.id === affixId)) {
+        affixPeriods.push(Number(periodId));
+      }
+    }
+
+    if (affixPeriods.length === 0) continue;
+
+    const withAffixQuery = `
+      SELECT MEDIAN(keystone_level) as median_key
+      FROM leaderboard_${seasonId}
+      WHERE dungeon_id = ${dungeonId} AND period IN (${affixPeriods.join(',')})
+    `;
+    const withAffixResult = await conn.query(withAffixQuery);
+    const withAffixMedian = (withAffixResult.toArray()[0]?.median_key as number) || 0;
+
+    const impactDelta = withAffixMedian - baseline;
+    results.push({ affixId, affixName, impactDelta });
+  }
+
+  return results.sort((a, b) => Math.abs(b.impactDelta) - Math.abs(a.impactDelta));
+}
+
+export async function getAggregateSecondaryAffixImpact(
+  conn: AsyncDuckDBConnection,
+  dungeonIds: number[],
+  seasonId: number,
+  periodIds?: number[],
+): Promise<Array<{ affixId: number; affixName: string; averageImpactDelta: number }>> {
+  const dungeonImpacts = await Promise.all(
+    dungeonIds.map(dId => getSecondaryAffixImpact(conn, dId, seasonId, periodIds)),
+  );
+
+  const affixMap = new Map<number, { name: string; deltas: number[] }>();
+
+  for (const impacts of dungeonImpacts) {
+    for (const impact of impacts) {
+      if (!affixMap.has(impact.affixId)) {
+        affixMap.set(impact.affixId, { name: impact.affixName, deltas: [] });
+      }
+      affixMap.get(impact.affixId)!.deltas.push(impact.impactDelta);
+    }
+  }
+
+  const results = Array.from(affixMap.entries()).map(([affixId, data]) => ({
+    affixId,
+    affixName: data.name,
+    averageImpactDelta: data.deltas.reduce((a, b) => a + b, 0) / data.deltas.length,
+  }));
+
+  return results.sort((a, b) => Math.abs(b.averageImpactDelta) - Math.abs(a.averageImpactDelta));
+}
+
+export async function getPrimaryAffixTrend(
+  conn: AsyncDuckDBConnection,
+  dungeonIds: number[],
+  seasonId: number,
+): Promise<Array<{ period: number; fortifiedMedian: number; tyrannicalMedian: number }>> {
+  const dungeonClause = dungeonIds.length === 1
+    ? `dungeon_id = ${dungeonIds[0]}`
+    : `dungeon_id IN (${dungeonIds.join(',')})`;
+
+  const query = `
+    SELECT
+      period,
+      fortified,
+      MEDIAN(keystone_level) as median_key
+    FROM leaderboard_${seasonId}
+    WHERE ${dungeonClause}
+    GROUP BY period, fortified
+    ORDER BY period ASC
+  `;
+
+  const result = await conn.query(query);
+  const rows = result.toArray() as Array<{ period: number; fortified: boolean; median_key: number }>;
+
+  const periodMap = new Map<number, { fortifiedMedian: number; tyrannicalMedian: number }>();
+  for (const row of rows) {
+    if (!periodMap.has(row.period)) {
+      periodMap.set(row.period, { fortifiedMedian: 0, tyrannicalMedian: 0 });
+    }
+    const entry = periodMap.get(row.period)!;
+    if (row.fortified) {
+      entry.fortifiedMedian = row.median_key;
+    } else {
+      entry.tyrannicalMedian = row.median_key;
+    }
+  }
+
+  return Array.from(periodMap.entries()).map(([period, data]) => ({
+    period,
+    ...data,
   }));
 }
