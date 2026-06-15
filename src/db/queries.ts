@@ -221,16 +221,16 @@ export async function getPrimaryAffixTrend(
   conn: AsyncDuckDBConnection,
   dungeonIds: number[],
   seasonId: number,
-): Promise<Array<{ period: number; fortifiedMedian: number; tyrannicalMedian: number }>> {
+): Promise<Array<{ period: number; fortifiedMedian: number; tyrannicalMedian: number; combinedMedian?: number }>> {
   const dungeonClause = dungeonIds.length === 1
     ? `dungeon_id = ${dungeonIds[0]}`
     : `dungeon_id IN (${dungeonIds.join(',')})`;
 
   const query = `
     SELECT
-      period,
+      period::INTEGER AS period,
       fortified,
-      MEDIAN(keystone_level) as median_key
+      MEDIAN(keystone_level)::FLOAT AS median_key
     FROM leaderboard_${seasonId}
     WHERE ${dungeonClause}
     GROUP BY period, fortified
@@ -238,7 +238,11 @@ export async function getPrimaryAffixTrend(
   `;
 
   const result = await conn.query(query);
-  const rows = result.toArray() as Array<{ period: number; fortified: boolean; median_key: number }>;
+  const rows = result.toArray().map(r => ({
+    period: Number(r.period),
+    fortified: Boolean(r.fortified),
+    median_key: Number(r.median_key),
+  }));
 
   const periodMap = new Map<number, { fortifiedMedian: number; tyrannicalMedian: number }>();
   for (const row of rows) {
