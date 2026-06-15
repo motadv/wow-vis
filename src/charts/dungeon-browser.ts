@@ -1,5 +1,5 @@
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import { ERA_PALETTE, ERA_LABELS, ERAS_IN_ORDER } from '../config.js';
+import { ERA_PALETTE, ERA_LABELS, ERAS_IN_ORDER, MAX_SEASON } from '../config.js';
 import { getSeasonRankMatrix } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
 import { computeRanks } from '../utils/ranks.js';
@@ -18,8 +18,11 @@ export async function initDungeonBrowser(
   conn: AsyncDuckDBConnection,
 ): Promise<void> {
   const seasons = manifest.seasons
-    .filter((s) => s.dungeonIds.length > 0)
+    .filter((s) => s.dungeonIds.length > 0 && s.id <= MAX_SEASON)
     .sort((a, b) => a.id - b.id);
+
+  const validDungeonIds = new Set(seasons.flatMap(s => s.dungeonIds));
+  const dungeons = manifest.dungeons.filter(d => validDungeonIds.has(d.id));
 
   container.textContent = 'Loading…';
   await Promise.all(seasons.map((s) => loadSeason(s.id)));
@@ -109,7 +112,7 @@ export async function initDungeonBrowser(
       tilesEl.className = 'lane-tiles';
 
       for (const r of entries) {
-        const dungeon = manifest.dungeons.find((d) => d.id === r.dungeon_id);
+        const dungeon = dungeons.find((d) => d.id === r.dungeon_id);
         if (!dungeon) continue;
 
         const tile = document.createElement('div');
@@ -153,7 +156,7 @@ export async function initDungeonBrowser(
 
   // Era legend (only eras present in the manifest, in canonical order)
   const usedEras = ERAS_IN_ORDER.filter((era) =>
-    manifest.dungeons.some((d) => d.era === era),
+    dungeons.some((d) => d.era === era),
   );
   const legendEl = document.createElement('div');
   legendEl.className = 'dungeon-browser-legend';
