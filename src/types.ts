@@ -66,6 +66,7 @@ export interface WeeklyArcRow {
 
 export interface AppState {
   selectedDungeon: number | null;
+  selectedDungeons: number[];         // multi-select for affix panel
   selectedSeasonForArc: number | null;  // which season's line is emphasized; null = all equal
   affixLens: 'trend' | 'snapshot' | 'headtohead';
   affixFilters: {
