@@ -10,6 +10,7 @@ if (!clientId || !clientSecret) {
   throw new Error('Missing VITE_BLIZZARD_CLIENT_ID or VITE_BLIZZARD_CLIENT_SECRET in environment');
 }
 
+const SLEEP_MS = 35; // Reduced from 55ms to allow parallel fetching with 3x concurrency
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function discoverActiveDungeons(
@@ -22,7 +23,7 @@ async function discoverActiveDungeons(
   for (const periodId of periods) {
     const active: number[] = [];
     for (const dungeonId of allDungeonIds) {
-      await sleep(55);
+      await sleep(SLEEP_MS);
       try {
         const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
         if (lb.leading_groups && lb.leading_groups.length > 0) {
@@ -110,7 +111,7 @@ async function main() {
       for (const realmId of realmIds) {
         for (const periodId of periods) {
           try {
-            await sleep(55);
+            await sleep(SLEEP_MS);
             const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
             if (!lb.leading_groups || lb.leading_groups.length === 0) continue;
 
