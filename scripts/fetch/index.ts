@@ -174,82 +174,31 @@ async function main() {
   const seasons: SeasonMeta[] = [];
   const affixManifest: AffixManifest = {};
 
-  for (const seasonId of seasonIds) {
-    const season = await fetchSeason(token, seasonId);
+  const batchSize = 3;
+  const seasonResults: ProcessSeasonResult[] = [];
+  const failed: Array<{ seasonId: number; error: string }> = [];
 
-    if (!season.end_timestamp || season.end_timestamp > now) {
-      console.log(`Skipping season ${seasonId} (${season.season_name}) — not yet ended`);
-      continue;
-    }
+  for (let i = 0; i < seasonIds.length; i += batchSize) {
+    const batch = seasonIds.slice(i, i + batchSize);
+    console.log(`\n📦 Processing batch: ${batch.join(', ')}`);
 
-    console.log(`\nProcessing season ${seasonId}: ${season.season_name}`);
-    const periods = season.periods.map(p => p.id);
-
-    console.log(`  Discovering active dungeons across ${periods.length} periods on realm ${realmIds[0]}...`);
-    const activeDungeonIds = await discoverActiveDungeons(
-      token, allDungeonIds, periods, realmIds[0],
+    const promises = batch.map(seasonId =>
+      processSeason(token, seasonId, allDungeonIds, dungeonNameById, realmIds, dungeonMap)
     );
-    console.log(`  Active dungeons: ${activeDungeonIds.join(', ')}`);
 
-    if (activeDungeonIds.length === 0) {
-      console.log(`  ⚠️  No active dungeons found; skipping season`);
-      continue;
-    }
+    const results = await Promise.allSettled(promises);
 
-    for (const dungeonId of activeDungeonIds) {
-      if (!dungeonMap.has(dungeonId)) {
-        dungeonMap.set(dungeonId, {
-          id: dungeonId,
-          name: dungeonNameById.get(dungeonId) ?? `Dungeon ${dungeonId}`,
-          abbrev: '???',    // placeholder — fill manually
-          era: 'vanilla',   // placeholder — fill manually
-          zone: 'unknown',  // placeholder — fill manually
-          offWorld: false,  // placeholder — fill manually
-        });
-      }
-    }
-
-    const seasonMeta: SeasonMeta = {
-      id: season.id,
-      name: season.season_name ?? `Season ${seasonId}`,
-      startTimestamp: season.start_timestamp,
-      dungeonIds: activeDungeonIds,
-    };
-    seasons.push(seasonMeta);
-
-    const allEntries: LeaderboardEntry[] = [];
-
-    for (const dungeonId of activeDungeonIds) {
-      for (const realmId of realmIds) {
-        for (const periodId of periods) {
-          try {
-            await sleep(SLEEP_MS);
-            const lb = await fetchLeaderboard(token, realmId, dungeonId, periodId);
-            if (!lb.leading_groups || lb.leading_groups.length === 0) continue;
-
-            const entries = transformLeaderboard(lb, seasonId, realmId);
-            allEntries.push(...entries);
-
-            // Accumulate affix manifest: season → period → affixes
-            if (!affixManifest[seasonId]) {
-              affixManifest[seasonId] = {};
-            }
-            if (!affixManifest[seasonId][periodId]) {
-              affixManifest[seasonId][periodId] = (lb.keystone_affixes ?? []).map(affix => ({
-                id: affix.keystone_affix.id,
-                name: affix.keystone_affix.name,
-              }));
-            }
-          } catch (err) {
-            console.warn(`    Skip realm=${realmId} dungeon=${dungeonId} period=${periodId}: ${(err as Error).message}`);
-          }
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        seasonResults.push(result.value);
+        if (!result.value.success) {
+          failed.push({ seasonId: result.value.seasonId, error: result.value.error });
         }
+      } else {
+        console.error(`Unexpected rejection in batch: ${result.reason}`);
+        failed.push({ seasonId: -1, error: String(result.reason) });
       }
     }
-
-    console.log(`  Collected ${allEntries.length} entries — writing Parquet...`);
-    await writeParquet(seasonId, allEntries);
-    console.log(`  Written public/data/season-${seasonId}.parquet`);
   }
 
   const manifest: DungeonManifest = {
