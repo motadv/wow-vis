@@ -51,7 +51,7 @@ html, body {
 
 /* --- Swimlane rank chart --- */
 
-.heatmap-title {
+.dungeon-browser-title {
   padding: 14px 16px 2px;
   font-size: 15px;
   font-weight: 700;
@@ -60,13 +60,13 @@ html, body {
   color: #e4e4e7;
 }
 
-.heatmap-subtitle {
+.dungeon-browser-subtitle {
   padding: 4px 16px 10px;
   font-size: 11px;
   color: #52525b;
 }
 
-.heatmap-lanes {
+.dungeon-browser-lanes {
   padding: 0 12px;
 }
 
@@ -160,7 +160,7 @@ html, body {
   display: block;
 }
 
-.heatmap-legend {
+.dungeon-browser-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;

@@ -7,7 +7,7 @@ import { expansionName, seasonLabel } from '../utils/seasons.js';
 import { setState, subscribe } from '../state.js';
 import type { DungeonManifest, RankMatrixRow, SeasonMeta } from '../types.js';
 
-export async function initHeatmap(
+export async function initDungeonBrowser(
   container: HTMLElement,
   manifest: DungeonManifest,
   conn: AsyncDuckDBConnection,
@@ -39,17 +39,17 @@ export async function initHeatmap(
   container.textContent = '';
 
   const titleEl = document.createElement('div');
-  titleEl.className = 'heatmap-title';
+  titleEl.className = 'dungeon-browser-title';
   titleEl.textContent = 'Dungeon Rankings by Season';
   container.appendChild(titleEl);
 
   const subtitleEl = document.createElement('div');
-  subtitleEl.className = 'heatmap-subtitle';
+  subtitleEl.className = 'dungeon-browser-subtitle';
   subtitleEl.textContent = 'Oldest season at top · Left tile = highest median key level';
   container.appendChild(subtitleEl);
 
   const lanesEl = document.createElement('div');
-  lanesEl.className = 'heatmap-lanes';
+  lanesEl.className = 'dungeon-browser-lanes';
   container.appendChild(lanesEl);
 
   const grouped = new Map<string, SeasonMeta[]>();
@@ -127,7 +127,7 @@ export async function initHeatmap(
     manifest.dungeons.some((d) => d.era === era),
   );
   const legendEl = document.createElement('div');
-  legendEl.className = 'heatmap-legend';
+  legendEl.className = 'dungeon-browser-legend';
   for (const era of usedEras) {
     const item = document.createElement('div');
     item.className = 'legend-item';

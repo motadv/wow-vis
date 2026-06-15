@@ -1,6 +1,6 @@
 import { initDB, getConnection, getAffixManifest } from '../db/init.js';
 import { initMap } from './map.js';
-import { initHeatmap } from './heatmap.js';
+import { initDungeonBrowser } from './dungeon-browser.js';
 import { initArc, setKeyDomain } from './arc.js';
 import { initAffixChart } from './affix.js';
 import { getGlobalKeyRange } from '../db/queries.js';
@@ -17,7 +17,7 @@ export default async function initViz(): Promise<void> {
 
   initMap(document.getElementById('map')!, manifest);
   initArc(document.getElementById('arc')!, manifest, conn);
-  await initHeatmap(document.getElementById('heatmap')!, manifest, conn);
+  await initDungeonBrowser(document.getElementById('heatmap')!, manifest, conn);
 
   const seasonIds = manifest.seasons.filter(s => s.dungeonIds.length > 0).map(s => s.id);
   const { minKey, maxKey } = await getGlobalKeyRange(conn, seasonIds);
