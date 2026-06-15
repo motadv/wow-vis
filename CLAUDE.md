@@ -74,11 +74,14 @@ Layout is three-panel (`#heatmap` left, `#right` top-right stacking arc + affix,
 
 4. **Affix Analysis** (`src/charts/affix.ts`) — Interactive panel with controls for filtering and analyzing keystone affixes. Dropdowns to select: dungeon (or all), season, and affix type (Fortified/Tyrannical/all). Shows dungeon performance metrics (count, avg key) grouped by affix combinations. Tabs for different analysis lenses (e.g., per-affix breakdown).
 
+**Affix panel filtering:** Dynamically shows only seasons where selected dungeons were active (dungeon lineups differ per season). Season selection is synchronized with arc chart via `selectedSeasonForArc` state. Use `getAvailableSeasonsForDungeons()` helper to validate dungeon/season combos before querying.
+
 **View Interactions:**
 - **Map ↔ Heatmap ↔ Arc:** Clicking a dungeon node on the map or a tile on the heatmap updates `selectedDungeon` in state, which triggers the arc chart to fetch and display that dungeon's progression.
 - **Heatmap → Arc:** Hovering over dungeon tiles highlights all lanes containing that dungeon across seasons; clicking selects it for the arc chart.
 - **Arc → Heatmap:** Clicking a season label in the arc chart highlights the corresponding lane in the heatmap.
-- **Affix ← State:** Independent of map/arc selection; responds to `selectedSeason` and `filterEras` from state. Not linked to dungeon selection (shows aggregate affix data, not dungeon-specific).
+- **Affix ↔ Arc (Season):** Both views share `selectedSeasonForArc` state. Clicking an arc line selects that season in affix panel; clicking an affix season button updates arc emphasis. "View All" button in arc title resets to null.
+- **Affix ← Dungeon Selection:** Responds to `selectedDungeons` state and filters available seasons dynamically. Only shows seasons where ALL selected dungeons were active.
 
 The dashboard has four layout zones (`#filters`, `#map`, `#detail`, `#scrubber`) defined in `index.html`. Layout and styling use plain CSS in `src/style.css` — no CSS framework. Tailwind was dropped because `Cross-Origin-Embedder-Policy: require-corp` (required for DuckDB-Wasm SharedArrayBuffer) blocks external CDN scripts that lack a `Cross-Origin-Resource-Policy` header.
 
@@ -86,9 +89,18 @@ The dashboard has four layout zones (`#filters`, `#map`, `#detail`, `#scrubber`)
 
 Two separate configs: `tsconfig.json` (browser, `moduleResolution: bundler`, `noEmit: true`) and `scripts/tsconfig.json` (Node.js, `moduleResolution: node16`, emit enabled). Type-check both when touching shared interfaces. `tsc --project scripts/tsconfig.json` will report "No inputs found" until `.ts` files exist in `scripts/` — expected, not a config error.
 
+## Domain Knowledge
+
+- **Dungeon seasons:** Dungeon lineups change each season. Example: Season 13 has dungeons [353, 375, 376, 501, 502, 503, 505, 507]; Season 14 has [247, 370, 382, 525, 499, 500, 504, 506]; Season 15 has [378, 391, 392, 525, 499, 503, 505, 542]. Always validate dungeon/season combos exist before querying.
+- **War Within affixes:** Season 13+ changed affix system — both Fortified and Tyrannical are active simultaneously in all periods. Pre-Season 13 alternated them weekly. Queries must handle this split (`getPrimaryAffixTrend()` checks `seasonId >= 13`).
+
 ## TypeScript
 
 Strict settings: `noUnusedLocals`, `noUnusedParameters`. No `any` assertions without justification. `Era` type and `DungeonManifest` shape are defined separately in `scripts/fetch/types.ts` and `src/types.ts` — keep them in sync.
+
+**DOM queries:** Always cast `document.querySelector()` result to `HTMLElement | null` explicitly in strict mode. Use `textContent` over `innerHTML` when building DOM from manifest data (safer pattern, even though data isn't user-provided).
+
+**Nested component rendering:** When building multi-level components (selector → content), clear parent once then append children in order. Avoid render functions clearing their containers — have them append instead.
 
 ## Planning
 
