@@ -201,16 +201,34 @@ async function main() {
     }
   }
 
+  // Build season list and affix manifest from successful results
+  const seasons_final: SeasonMeta[] = [];
+  const affixManifest_final: AffixManifest = {};
+
+  for (const result of seasonResults) {
+    if (result.success) {
+      seasons_final.push(result.seasonMeta);
+
+      // Merge affix data: seasonId → periodId → affixes
+      if (!affixManifest_final[result.seasonId]) {
+        affixManifest_final[result.seasonId] = {};
+      }
+      for (const [periodId, affixes] of Object.entries(result.affixData)) {
+        affixManifest_final[result.seasonId][periodId] = affixes;
+      }
+    }
+  }
+
   const manifest: DungeonManifest = {
     dungeons: Array.from(dungeonMap.values()),
-    seasons,
+    seasons: seasons_final,
     zones: [],
   };
 
   await writeManifest(manifest);
   console.log('\nWritten public/data/dungeons.json');
 
-  await writeAffixManifest(affixManifest);
+  await writeAffixManifest(affixManifest_final);
   console.log('Written public/data/affixes.json');
 
   console.log('\nDone. Remember to manually fill era, mapX, mapY, offWorld in dungeons.json.');
