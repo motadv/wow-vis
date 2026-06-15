@@ -40,9 +40,11 @@ Report results (succeeded/failed seasons)
 
 ### Concurrency Control
 
-- **Concurrency limit:** 2–3 seasons at a time
+- **Concurrency limit:** 3 seasons at a time (batched processing)
 - **Implementation:** Batch seasons into groups, use `Promise.allSettled()` per batch, wait for batch completion before starting next
-- **Sleep adjustment:** Reduce from 55ms to 35ms to compensate for parallel I/O
+- **Sleep adjustment:** Reduce from 55ms to 35ms between API requests
+  - With 3 parallel seasons, requests are naturally spread across time (~105ms effective spacing between requests to same realm/dungeon)
+  - 35ms sleep is conservative while improving throughput compared to sequential 55ms delays
 
 ### Error Handling
 
@@ -74,8 +76,10 @@ Report results (succeeded/failed seasons)
    - Merge dungeon/affix data from all successful seasons
    - Report failures at the end
 
-2. **`scripts/fetch/blizzard.ts`**
-   - Change sleep from 55ms to 35ms (one location in `fetchLeaderboard` call site or create a constant)
+2. **`scripts/fetch/index.ts`** (sleep locations)
+   - `discoverActiveDungeons()` line 25: Change `await sleep(55)` to `await sleep(35)`
+   - Main season loop line 113: Change `await sleep(55)` to `await sleep(35)`
+   - Define a constant `const SLEEP_MS = 35` at the top and use it in both places for consistency
 
 3. **`scripts/fetch/write.ts`**
    - No changes (each season writes to its own parquet file, no concurrency issues)
