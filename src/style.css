@@ -11,38 +11,39 @@ html, body {
 
 #layout {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   height: 100vh;
+  overflow-y: auto;
+  background: #09090b;
 }
 
 #heatmap {
-  flex: 1.2;
+  flex: 0 0 auto;
+  min-height: 400px;
   overflow-y: auto;
   overflow-x: hidden;
   background: #18181b;
-  border-right: 1px solid #27272a;
+  border-bottom: 1px solid #27272a;
 }
 
 #right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #18181b;
+  display: none; /* deprecated */
 }
 
 #arc {
-  flex: 1;
+  flex: 0 0 auto;
+  min-height: 400px;
   overflow: hidden;
   background: #18181b;
   border-bottom: 1px solid #27272a;
 }
 
 #affix {
-  flex: 1;
+  flex: 0 0 auto;
+  min-height: 500px;
   overflow-y: auto;
   overflow-x: hidden;
   background: #18181b;
-  padding: 16px;
 }
 
 #map {
@@ -187,10 +188,7 @@ html, body {
 /* --- Affix analysis panel --- */
 
 .affix-tabs {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px 4px;
-  border-bottom: 1px solid #27272a;
+  display: none; /* Old lens tabs no longer needed */
 }
 
 .affix-tab {
@@ -220,24 +218,24 @@ html, body {
   padding: 12px 16px;
   border-bottom: 1px solid #27272a;
   flex-wrap: wrap;
-  align-items: center;
 }
 
 .affix-select,
 .affix-toggle {
-  padding: 6px 10px;
-  background: #27272a;
-  border: 1px solid #3f3f46;
+  padding: 8px 12px;
+  background: #1a1a2e;
+  border: 1px solid #27272a;
   border-radius: 4px;
   color: #e4e4e7;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .affix-select:hover,
 .affix-toggle:hover {
-  border-color: #52525b;
+  background: #27272a;
+  border-color: #3f3f46;
 }
 
 .affix-select:focus,
@@ -247,21 +245,36 @@ html, body {
 }
 
 .affix-chart {
-  flex: 1;
-  position: relative;
-  min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
 }
 
 .affix-chart svg {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  height: auto;
 }
 
 .affix-empty-state {
-  color: #71717a;
-  font-size: 13px;
+  padding: 40px 20px;
   text-align: center;
+  color: #71717a;
+  font-size: 14px;
+}
+
+.stream-fortified {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.stream-tyrannical {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.affix-arm {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.affix-label {
+  pointer-events: none;
+  transition: opacity 0.2s;
 }
