@@ -81,22 +81,6 @@
       "offWorld": false
     },
     {
-      "id": 369,
-      "name": "Operation: Mechagon - Junkyard",
-      "abbrev": "???",
-      "era": "vanilla",
-      "zone": "unknown",
-      "offWorld": false
-    },
-    {
-      "id": 370,
-      "name": "Operation: Mechagon - Workshop",
-      "abbrev": "???",
-      "era": "vanilla",
-      "zone": "unknown",
-      "offWorld": false
-    },
-    {
       "id": 375,
       "name": "Mists of Tirna Scithe",
       "abbrev": "???",
@@ -155,6 +139,22 @@
     {
       "id": 382,
       "name": "Theater of Pain",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 369,
+      "name": "Operation: Mechagon - Junkyard",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 370,
+      "name": "Operation: Mechagon - Workshop",
       "abbrev": "???",
       "era": "vanilla",
       "zone": "unknown",
@@ -257,6 +257,38 @@
       "offWorld": false
     },
     {
+      "id": 399,
+      "name": "Ruby Life Pools",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 400,
+      "name": "The Nokhud Offensive",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 401,
+      "name": "The Azure Vault",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 402,
+      "name": "Algeth'ar Academy",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
       "id": 168,
       "name": "The Everbloom",
       "abbrev": "???",
@@ -305,32 +337,40 @@
       "offWorld": false
     },
     {
-      "id": 399,
-      "name": "Ruby Life Pools",
+      "id": 525,
+      "name": "Operation: Floodgate",
       "abbrev": "???",
       "era": "vanilla",
       "zone": "unknown",
       "offWorld": false
     },
     {
-      "id": 400,
-      "name": "The Nokhud Offensive",
+      "id": 499,
+      "name": "Priory of the Sacred Flame",
       "abbrev": "???",
       "era": "vanilla",
       "zone": "unknown",
       "offWorld": false
     },
     {
-      "id": 401,
-      "name": "The Azure Vault",
+      "id": 500,
+      "name": "The Rookery",
       "abbrev": "???",
       "era": "vanilla",
       "zone": "unknown",
       "offWorld": false
     },
     {
-      "id": 402,
-      "name": "Algeth'ar Academy",
+      "id": 504,
+      "name": "Darkflame Cleft",
+      "abbrev": "???",
+      "era": "vanilla",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 506,
+      "name": "Cinderbrew Meadery",
       "abbrev": "???",
       "era": "vanilla",
       "zone": "unknown",
@@ -371,46 +411,6 @@
     {
       "id": 507,
       "name": "Grim Batol",
-      "abbrev": "???",
-      "era": "vanilla",
-      "zone": "unknown",
-      "offWorld": false
-    },
-    {
-      "id": 525,
-      "name": "Operation: Floodgate",
-      "abbrev": "???",
-      "era": "vanilla",
-      "zone": "unknown",
-      "offWorld": false
-    },
-    {
-      "id": 499,
-      "name": "Priory of the Sacred Flame",
-      "abbrev": "???",
-      "era": "vanilla",
-      "zone": "unknown",
-      "offWorld": false
-    },
-    {
-      "id": 500,
-      "name": "The Rookery",
-      "abbrev": "???",
-      "era": "vanilla",
-      "zone": "unknown",
-      "offWorld": false
-    },
-    {
-      "id": 504,
-      "name": "Darkflame Cleft",
-      "abbrev": "???",
-      "era": "vanilla",
-      "zone": "unknown",
-      "offWorld": false
-    },
-    {
-      "id": 506,
-      "name": "Cinderbrew Meadery",
       "abbrev": "???",
       "era": "vanilla",
       "zone": "unknown",
