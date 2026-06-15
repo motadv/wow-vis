@@ -3,6 +3,7 @@ import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import { getWeeklyArc } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
 import { getState, setState, subscribe } from '../state.js';
+import { MAX_SEASON } from '../config.js';
 import type { DungeonManifest, SeasonMeta, WeeklyArcRow } from '../types.js';
 
 type ArcEntry = { season: SeasonMeta; rows: WeeklyArcRow[]; colorIndex: number };
@@ -40,7 +41,7 @@ export function initArc(
       const dungeonAtStart = state.selectedDungeon;
 
       const activeSeasonsForDungeon = manifest.seasons
-        .filter(s => s.dungeonIds.includes(dungeonAtStart))
+        .filter(s => s.dungeonIds.includes(dungeonAtStart) && s.id <= MAX_SEASON)
         .sort((a, b) => a.id - b.id);
 
       lastArcData = await Promise.all(
