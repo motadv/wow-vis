@@ -5,6 +5,7 @@ import {
   OFF_WORLD_X,
   OFF_WORLD_Y,
   ERA_PALETTE,
+  MAX_SEASON,
 } from "../config.js";
 import { getState, subscribe, setState } from "../state.js";
 import type { DungeonManifest, DungeonMeta } from "../types.js";
@@ -14,6 +15,7 @@ const CLUSTER_RADIUS = 40;
 let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
 let nodesG: d3.Selection<SVGGElement, unknown, null, undefined>;
 let manifest: DungeonManifest;
+let activeDungeons: DungeonMeta[] = [];
 let positionMap = new Map<number, { x: number; y: number }>();
 
 function buildPositions(): void {
@@ -21,7 +23,7 @@ function buildPositions(): void {
   const zoneBySlug = new Map(manifest.zones.map((z) => [z.slug, z]));
 
   const byZone = new Map<string, DungeonMeta[]>();
-  for (const d of manifest.dungeons) {
+  for (const d of activeDungeons) {
     if (d.offWorld) continue;
     const arr = byZone.get(d.zone) ?? [];
     arr.push(d);
@@ -44,7 +46,7 @@ function buildPositions(): void {
     }
   }
 
-  const offWorld = manifest.dungeons.filter((d) => d.offWorld);
+  const offWorld = activeDungeons.filter((d) => d.offWorld);
   const half = Math.floor(offWorld.length / 2);
   offWorld.forEach((d, i) => {
     positionMap.set(d.id, { x: OFF_WORLD_X + (i - half) * 60, y: OFF_WORLD_Y });
@@ -53,6 +55,12 @@ function buildPositions(): void {
 
 export function initMap(container: HTMLElement, mf: DungeonManifest): void {
   manifest = mf;
+  const validDungeonIds = new Set(
+    mf.seasons
+      .filter(s => s.id <= MAX_SEASON && s.dungeonIds.length > 0)
+      .flatMap(s => s.dungeonIds)
+  );
+  activeDungeons = mf.dungeons.filter(d => validDungeonIds.has(d.id));
   buildPositions();
 
   svg = d3
@@ -103,7 +111,7 @@ function renderNodes(): void {
 
   const nodes = nodesG
     .selectAll<SVGCircleElement, DungeonMeta>("circle")
-    .data(manifest.dungeons, (d) => d.id);
+    .data(activeDungeons, (d) => d.id);
 
   nodes
     .enter()
