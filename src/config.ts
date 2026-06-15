@@ -7,6 +7,8 @@ export const MAP_HEIGHT = 2560;
 export const OFF_WORLD_X = 2790;
 export const OFF_WORLD_Y = 2409;
 
+export const MAX_SEASON = 12;
+
 export const ERAS_IN_ORDER: Era[] = [
   "vanilla",
   "tbc",

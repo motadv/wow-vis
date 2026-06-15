@@ -4,6 +4,7 @@ import { initDungeonBrowser } from './dungeon-browser.js';
 import { initArc, setKeyDomain } from './arc.js';
 import { initAffixChart } from './affix.js';
 import { getGlobalKeyRange } from '../db/queries.js';
+import { MAX_SEASON } from '../config.js';
 import type { DungeonManifest } from '../types.js';
 
 export default async function initViz(): Promise<void> {
@@ -18,7 +19,9 @@ export default async function initViz(): Promise<void> {
   await initDungeonBrowser(document.getElementById('heatmap')!, manifest, conn);
   initArc(document.getElementById('arc')!, manifest, conn);
 
-  const seasonIds = manifest.seasons.filter(s => s.dungeonIds.length > 0).map(s => s.id);
+  const seasonIds = manifest.seasons
+    .filter(s => s.dungeonIds.length > 0 && s.id <= MAX_SEASON)
+    .map(s => s.id);
   const { minKey, maxKey } = await getGlobalKeyRange(conn, seasonIds);
   setKeyDomain(Math.floor(minKey) - 3, Math.ceil(maxKey) + 3);
 
