@@ -1,15 +1,107 @@
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import { getSecondaryAffixImpact, getAggregateSecondaryAffixImpact, getPrimaryAffixTrend } from '../db/queries.js';
-import { subscribe } from '../state.js';
+import { subscribe, setState } from '../state.js';
 import { renderStreamGraph } from './affix-stream.js';
 import { renderRadialChart } from './affix-radial.js';
 import type { DungeonManifest, SecondaryAffixImpact } from '../types.js';
+
+function getAvailableSeasonsForDungeons(manifest: DungeonManifest, dungeonIds: number[]): number[] {
+  const seasonsSet = new Set<number>();
+  for (const season of manifest.seasons) {
+    const hasAllDungeons = dungeonIds.every(dId => season.dungeonIds.includes(dId));
+    if (hasAllDungeons) {
+      seasonsSet.add(season.id);
+    }
+  }
+  return Array.from(seasonsSet).sort((a, b) => b - a);
+}
+
+function renderSeasonSelector(container: HTMLElement, availableSeasons: number[], selectedSeasonId: number | null, onSelect: (seasonId: number | null) => void): void {
+  const selectorDiv = document.createElement('div');
+  selectorDiv.style.cssText = 'padding:12px 16px;border-bottom:1px solid #27272a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+
+  const label = document.createElement('span');
+  label.style.cssText = 'font-size:12px;color:#999;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;';
+  label.textContent = 'Season:';
+  selectorDiv.appendChild(label);
+
+  const buttonGroup = document.createElement('div');
+  buttonGroup.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+
+  // "All" button
+  const allBtn = document.createElement('button');
+  allBtn.textContent = 'All';
+  allBtn.style.cssText = `
+    padding:6px 12px;
+    font-size:12px;
+    border:1px solid ${selectedSeasonId === null ? '#8b5cf6' : '#404040'};
+    background:${selectedSeasonId === null ? '#6d28d9' : 'transparent'};
+    color:${selectedSeasonId === null ? '#fff' : '#999'};
+    border-radius:4px;
+    cursor:pointer;
+    transition:all 0.2s ease;
+    font-weight:600;
+  `;
+  allBtn.onmouseover = () => {
+    if (selectedSeasonId !== null) {
+      allBtn.style.borderColor = '#666';
+      allBtn.style.color = '#ccc';
+    }
+  };
+  allBtn.onmouseout = () => {
+    if (selectedSeasonId !== null) {
+      allBtn.style.borderColor = '#404040';
+      allBtn.style.color = '#999';
+    }
+  };
+  allBtn.onclick = () => {
+    onSelect(null);
+  };
+  buttonGroup.appendChild(allBtn);
+
+  // Season buttons
+  for (const seasonId of availableSeasons) {
+    const btn = document.createElement('button');
+    btn.textContent = `S${seasonId}`;
+    const isSelected = selectedSeasonId === seasonId;
+    btn.style.cssText = `
+      padding:6px 12px;
+      font-size:12px;
+      border:1px solid ${isSelected ? '#8b5cf6' : '#404040'};
+      background:${isSelected ? '#6d28d9' : 'transparent'};
+      color:${isSelected ? '#fff' : '#999'};
+      border-radius:4px;
+      cursor:pointer;
+      transition:all 0.2s ease;
+      font-weight:600;
+    `;
+    btn.onmouseover = () => {
+      if (!isSelected) {
+        btn.style.borderColor = '#666';
+        btn.style.color = '#ccc';
+      }
+    };
+    btn.onmouseout = () => {
+      if (!isSelected) {
+        btn.style.borderColor = '#404040';
+        btn.style.color = '#999';
+      }
+    };
+    btn.onclick = () => {
+      onSelect(seasonId);
+    };
+    buttonGroup.appendChild(btn);
+  }
+
+  selectorDiv.appendChild(buttonGroup);
+  container.appendChild(selectorDiv);
+}
 
 export async function initAffixChart(
   conn: AsyncDuckDBConnection,
   manifest: DungeonManifest,
 ): Promise<void> {
-  const container = document.querySelector('#affix');
+  const container = document.querySelector('#affix') as HTMLElement | null;
   if (!container) return;
 
   container.innerHTML = '';
@@ -23,18 +115,34 @@ export async function initAffixChart(
       return;
     }
 
-    if (state.selectedDungeons === lastSelectedDungeons && state.affixFilters.seasonId === lastSeasonId) {
+    if (state.selectedDungeons === lastSelectedDungeons && state.selectedSeasonForArc === lastSeasonId) {
       return; // No change
     }
 
     lastSelectedDungeons = [...state.selectedDungeons];
-    lastSeasonId = state.affixFilters.seasonId;
+    lastSeasonId = state.selectedSeasonForArc;
 
     try {
+      const availableSeasons = getAvailableSeasonsForDungeons(manifest, state.selectedDungeons);
+
+      // Determine effective season - use selected if available, otherwise aggregate
+      let effectiveSeasonId = state.selectedSeasonForArc;
+      if (effectiveSeasonId && !availableSeasons.includes(effectiveSeasonId)) {
+        effectiveSeasonId = null;
+      }
+      if (!effectiveSeasonId && availableSeasons.length > 0) {
+        effectiveSeasonId = availableSeasons[0]; // Default to most recent available
+      }
+
+      container.innerHTML = '';
+      renderSeasonSelector(container, availableSeasons, state.selectedSeasonForArc, (seasonId) => {
+        setState({ selectedSeasonForArc: seasonId });
+      });
+
       if (state.selectedDungeons.length === 1) {
-        await renderSingleDungeonView(container as HTMLElement, conn, manifest, state.selectedDungeons[0], state.affixFilters.seasonId);
+        await renderSingleDungeonView(container as HTMLElement, conn, manifest, state.selectedDungeons[0], effectiveSeasonId, availableSeasons);
       } else {
-        await renderMultiDungeonView(container as HTMLElement, conn, manifest, state.selectedDungeons, state.affixFilters.seasonId);
+        await renderMultiDungeonView(container as HTMLElement, conn, manifest, state.selectedDungeons, effectiveSeasonId, availableSeasons);
       }
     } catch (err) {
       console.error('Affix chart error:', err);
@@ -49,18 +157,17 @@ async function renderSingleDungeonView(
   manifest: DungeonManifest,
   dungeonId: number,
   seasonId: number | null,
+  availableSeasons: number[] = [],
 ): Promise<void> {
   const dungeon = manifest.dungeons.find(d => d.id === dungeonId);
   if (!dungeon) return;
 
-  const effectiveSeasonId = seasonId || manifest.seasons[manifest.seasons.length - 1]?.id || 6;
-
-  container.innerHTML = '';
+  const effectiveSeasonId = seasonId || availableSeasons[0] || manifest.seasons[manifest.seasons.length - 1]?.id || 6;
 
   // Title
   const title = document.createElement('div');
   title.style.cssText = 'padding:16px;font-size:16px;font-weight:bold;color:#e4e4e7;border-bottom:1px solid #27272a;';
-  title.innerHTML = `${dungeon.name} — Affix Impact Analysis (Season ${effectiveSeasonId})`;
+  title.textContent = `${dungeon.name} — Affix Impact Analysis (Season ${effectiveSeasonId})`;
   container.appendChild(title);
 
   // Stream graph section
@@ -107,16 +214,15 @@ async function renderMultiDungeonView(
   manifest: DungeonManifest,
   dungeonIds: number[],
   seasonId: number | null,
+  availableSeasons: number[] = [],
 ): Promise<void> {
-  const effectiveSeasonId = seasonId || manifest.seasons[manifest.seasons.length - 1]?.id || 6;
+  const effectiveSeasonId = seasonId || availableSeasons[0] || manifest.seasons[manifest.seasons.length - 1]?.id || 6;
   const dungeonNames = dungeonIds.map(id => manifest.dungeons.find(d => d.id === id)?.name || `Dungeon ${id}`).join(', ');
-
-  container.innerHTML = '';
 
   // Title
   const title = document.createElement('div');
   title.style.cssText = 'padding:16px;font-size:16px;font-weight:bold;color:#e4e4e7;border-bottom:1px solid #27272a;';
-  title.innerHTML = `${dungeonNames} — Aggregate Affix Analysis (Season ${effectiveSeasonId})`;
+  title.textContent = `${dungeonNames} — Aggregate Affix Analysis (Season ${effectiveSeasonId})`;
   container.appendChild(title);
 
   // Stream graph section

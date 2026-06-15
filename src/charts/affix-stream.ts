@@ -8,7 +8,10 @@ export function renderStreamGraph(
   height: number,
 ): void {
   if (!data || data.length === 0) {
-    container.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">No data available</div>';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.style.cssText = 'color:#999;text-align:center;padding:20px;';
+    emptyDiv.textContent = 'No data available';
+    container.appendChild(emptyDiv);
     return;
   }
 
@@ -25,42 +28,75 @@ export function renderStreamGraph(
     .append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
+  // Detect if this is War Within data (both affixes present) or pre-War Within (split affixes)
+  const isWarWithin = data.some(d => 'combinedMedian' in d && (d as any).combinedMedian !== undefined);
+
   // Scales
   const xScale = d3.scaleLinear()
     .domain(d3.extent(data, d => d.period) as [number, number])
     .range([0, innerWidth]);
 
-  const maxMedian = Math.max(...data.map(d => Math.max(d.fortifiedMedian, d.tyrannicalMedian)));
-  const yScale = d3.scaleLinear()
-    .domain([0, maxMedian * 1.1])
-    .range([innerHeight, 0]);
+  let yScale: d3.ScaleLinear<number, number>;
+  let line: d3.Line<PrimaryAffixTrendPoint>;
+  let legendInfo: { label: string; color: string }[];
 
-  // Area generators for each stream
-  const fortifiedArea = d3.area<PrimaryAffixTrendPoint>()
-    .x(d => xScale(d.period))
-    .y0(innerHeight)
-    .y1(d => yScale(d.fortifiedMedian));
+  if (isWarWithin) {
+    // War Within: Single line showing combined median
+    const maxMedian = Math.max(...data.map(d => (d as any).combinedMedian || 0));
+    yScale = d3.scaleLinear()
+      .domain([0, maxMedian * 1.1])
+      .range([innerHeight, 0]);
 
-  const tyrannicalArea = d3.area<PrimaryAffixTrendPoint>()
-    .x(d => xScale(d.period))
-    .y0(d => yScale(d.fortifiedMedian))
-    .y1(d => yScale(d.fortifiedMedian + d.tyrannicalMedian));
+    line = d3.line<PrimaryAffixTrendPoint>()
+      .x(d => xScale(d.period))
+      .y(d => yScale((d as any).combinedMedian || 0));
 
-  // Fortified stream
-  svg.append('path')
-    .datum(data)
-    .attr('d', fortifiedArea)
-    .attr('fill', '#3b82f6')
-    .attr('opacity', 0.7)
-    .attr('class', 'stream-fortified');
+    // Draw single line
+    svg.append('path')
+      .datum(data)
+      .attr('d', line)
+      .attr('fill', 'none')
+      .attr('stroke', '#8b5cf6')
+      .attr('stroke-width', 2)
+      .attr('class', 'trend-line');
 
-  // Tyrannical stream
-  svg.append('path')
-    .datum(data)
-    .attr('d', tyrannicalArea)
-    .attr('fill', '#f97316')
-    .attr('opacity', 0.7)
-    .attr('class', 'stream-tyrannical');
+    legendInfo = [{ label: 'Median Key Level (both affixes active)', color: '#8b5cf6' }];
+  } else {
+    // Pre-War Within: Stacked area chart for Fortified vs Tyrannical
+    const maxMedian = Math.max(...data.map(d => Math.max(d.fortifiedMedian, d.tyrannicalMedian)));
+    yScale = d3.scaleLinear()
+      .domain([0, maxMedian * 1.1])
+      .range([innerHeight, 0]);
+
+    const fortifiedArea = d3.area<PrimaryAffixTrendPoint>()
+      .x(d => xScale(d.period))
+      .y0(innerHeight)
+      .y1(d => yScale(d.fortifiedMedian));
+
+    const tyrannicalArea = d3.area<PrimaryAffixTrendPoint>()
+      .x(d => xScale(d.period))
+      .y0(d => yScale(d.fortifiedMedian))
+      .y1(d => yScale(d.fortifiedMedian + d.tyrannicalMedian));
+
+    svg.append('path')
+      .datum(data)
+      .attr('d', fortifiedArea)
+      .attr('fill', '#3b82f6')
+      .attr('opacity', 0.7)
+      .attr('class', 'stream-fortified');
+
+    svg.append('path')
+      .datum(data)
+      .attr('d', tyrannicalArea)
+      .attr('fill', '#f97316')
+      .attr('opacity', 0.7)
+      .attr('class', 'stream-tyrannical');
+
+    legendInfo = [
+      { label: 'Fortified', color: '#3b82f6' },
+      { label: 'Tyrannical', color: '#f97316' },
+    ];
+  }
 
   // Axes
   svg.append('g')
@@ -90,11 +126,20 @@ export function renderStreamGraph(
 
   // Legend
   const legend = svg.append('g')
-    .attr('transform', `translate(${innerWidth - 120},${-15})`);
+    .attr('transform', `translate(${innerWidth - 180},${-15})`);
 
-  legend.append('rect').attr('width', 6).attr('height', 6).attr('fill', '#3b82f6');
-  legend.append('text').attr('x', 10).attr('y', 5).attr('font-size', '11px').attr('fill', '#ccc').text('Fortified');
-
-  legend.append('rect').attr('y', 12).attr('width', 6).attr('height', 6).attr('fill', '#f97316');
-  legend.append('text').attr('x', 10).attr('y', 17).attr('font-size', '11px').attr('fill', '#ccc').text('Tyrannical');
+  for (let i = 0; i < legendInfo.length; i++) {
+    const item = legendInfo[i];
+    legend.append('rect')
+      .attr('y', i * 12)
+      .attr('width', 6)
+      .attr('height', 6)
+      .attr('fill', item.color);
+    legend.append('text')
+      .attr('x', 10)
+      .attr('y', i * 12 + 5)
+      .attr('font-size', '11px')
+      .attr('fill', '#ccc')
+      .text(item.label);
+  }
 }

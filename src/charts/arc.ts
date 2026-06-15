@@ -77,8 +77,41 @@ function renderArc(
 
   const titleEl = document.createElement('div');
   titleEl.style.cssText =
-    'padding:14px 16px 0;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#e4e4e7';
-  titleEl.textContent = `${title} — Median Key Level per Week`;
+    'padding:14px 16px 0;display:flex;align-items:center;justify-content:space-between;';
+
+  const titleText = document.createElement('span');
+  titleText.style.cssText = 'font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#e4e4e7';
+  titleText.textContent = `${title} — Median Key Level per Week`;
+  titleEl.appendChild(titleText);
+
+  if (emphasizedSeasonId !== null) {
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = 'View All';
+    resetBtn.style.cssText = `
+      padding:4px 10px;
+      font-size:11px;
+      border:1px solid #666;
+      background:transparent;
+      color:#999;
+      border-radius:3px;
+      cursor:pointer;
+      transition:all 0.2s ease;
+      font-weight:600;
+    `;
+    resetBtn.onmouseover = () => {
+      resetBtn.style.borderColor = '#8b5cf6';
+      resetBtn.style.color = '#c4b5fd';
+    };
+    resetBtn.onmouseout = () => {
+      resetBtn.style.borderColor = '#666';
+      resetBtn.style.color = '#999';
+    };
+    resetBtn.onclick = () => {
+      setState({ selectedSeasonForArc: null });
+    };
+    titleEl.appendChild(resetBtn);
+  }
+
   container.appendChild(titleEl);
 
   const colors = d3.schemeTableau10 as readonly string[];
