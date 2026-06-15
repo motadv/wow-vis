@@ -4,8 +4,13 @@ import { getSeasonRankMatrix } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
 import { computeRanks } from '../utils/ranks.js';
 import { expansionName, seasonLabel } from '../utils/seasons.js';
-import { setState, subscribe } from '../state.js';
+import { subscribe, getState, toggleDungeonSelection } from '../state.js';
 import type { DungeonManifest, RankMatrixRow, SeasonMeta } from '../types.js';
+
+function handleTileClick(dungeonId: number, event: MouseEvent): void {
+  event.stopPropagation();
+  toggleDungeonSelection(dungeonId);
+}
 
 export async function initDungeonBrowser(
   container: HTMLElement,
@@ -80,6 +85,24 @@ export async function initDungeonBrowser(
       const labelEl = document.createElement('div');
       labelEl.className = 'lane-label';
       labelEl.textContent = seasonLabel(season);
+
+      // Add F/T split bars
+      const splitContainer = document.createElement('div');
+      splitContainer.style.cssText = 'display:flex;gap:2px;align-items:center;margin-left:8px;height:24px;flex:0 0 auto;';
+
+      // Fortified bar (blue)
+      const fortBar = document.createElement('div');
+      fortBar.style.cssText = 'flex:0.55;background:#3b82f6;height:100%;border-radius:2px;';
+      fortBar.title = 'Fortified';
+      splitContainer.appendChild(fortBar);
+
+      // Tyrannical bar (orange)
+      const tyrBar = document.createElement('div');
+      tyrBar.style.cssText = 'flex:0.45;background:#f97316;height:100%;border-radius:2px;';
+      tyrBar.title = 'Tyrannical';
+      splitContainer.appendChild(tyrBar);
+
+      labelEl.appendChild(splitContainer);
       lane.appendChild(labelEl);
 
       const tilesEl = document.createElement('div');
@@ -93,6 +116,7 @@ export async function initDungeonBrowser(
         tile.className = 'tile';
         tile.dataset.dungeonId = String(dungeon.id);
         tile.style.background = ERA_PALETTE[dungeon.era];
+        tile.style.cursor = 'pointer';
         tile.textContent = dungeon.abbrev;
 
         const tooltip = document.createElement('div');
@@ -110,9 +134,14 @@ export async function initDungeonBrowser(
 
         tile.addEventListener('mouseenter', () => applyHighlight(dungeon.id));
         tile.addEventListener('mouseleave', clearHighlight);
-        tile.addEventListener('click', () =>
-          setState({ selectedDungeon: dungeon.id, selectedSeasonForArc: season.id }),
-        );
+        tile.onclick = (e) => handleTileClick(dungeon.id, e as MouseEvent);
+
+        // Apply initial selection state
+        const currentState = getState();
+        const isSelected = currentState.selectedDungeons.includes(dungeon.id);
+        if (isSelected) {
+          tile.classList.add('tile--selected');
+        }
 
         tilesEl.appendChild(tile);
       }
@@ -142,14 +171,12 @@ export async function initDungeonBrowser(
   }
   container.appendChild(legendEl);
 
-  // Keep .tile--selected in sync with global state (e.g. arc legend clicks)
+  // Keep .tile--selected in sync with global state (multi-select and arc legend clicks)
   subscribe((state) => {
     container.querySelectorAll<HTMLElement>('.tile').forEach((tile) => {
-      tile.classList.toggle(
-        'tile--selected',
-        state.selectedDungeon !== null &&
-          Number(tile.dataset.dungeonId) === state.selectedDungeon,
-      );
+      const dungeonId = Number(tile.dataset.dungeonId);
+      const isSelected = state.selectedDungeons.includes(dungeonId);
+      tile.classList.toggle('tile--selected', isSelected);
     });
   });
 
