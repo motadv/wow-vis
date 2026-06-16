@@ -41,7 +41,7 @@ html, body {
 #arc {
   flex: 0 0 auto;
   min-height: 400px;
-  overflow: hidden;
+  overflow: visible;
   background: #18181b;
   border-bottom: 1px solid #27272a;
   padding: 0 24px;
