@@ -4,7 +4,7 @@ import { getWeeklyArc, getSecondaryAffixImpact } from "../db/queries.js";
 import { loadSeason, getAffixManifest } from "../db/init.js";
 import { getState, setState, subscribe } from "../state.js";
 import { dungeonColor } from "../utils/colors.js";
-import { computeAverageArc, collectAtWeek, computeSharedSeasons } from "../utils/arc-utils.js";
+import { computeAverageArc, collectAtWeek, computeSharedSeasons, computeWeekLeaders } from "../utils/arc-utils.js";
 import { MAX_SEASON, DISABLED_SEASONS } from "../config.js";
 import type {
   DungeonManifest,
@@ -247,6 +247,144 @@ function renderArc(
   );
 }
 
+function drawComparisonTooltip(
+  _g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  _dungeons: DungeonMeta[],
+  _rowsByDungeon: Map<number, WeeklyArcRow[]>,
+  _xScale: d3.ScaleLinear<number, number>,
+  _yScale: d3.ScaleLinear<number, number>,
+  _width: number,
+  _height: number,
+  _totalTitleH: number,
+  _container: HTMLElement,
+  _seasonId: number,
+  _affixImpactCache: Map<string, Map<number, { affixName: string; impactDelta: number }>>,
+): void {
+  // implemented in next task
+}
+
+function drawLeaderRibbon(
+  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  dungeons: DungeonMeta[],
+  rowsByDungeon: Map<number, WeeklyArcRow[]>,
+  xScale: d3.ScaleLinear<number, number>,
+  yOffset: number,
+  ribbonHeight: number,
+): void {
+  const leaders = computeWeekLeaders(
+    dungeons,
+    rowsByDungeon as Map<number, ReadonlyArray<{ period_index: number; median_key: number }>>,
+  );
+  if (leaders.size === 0) return;
+
+  const domain = xScale.domain();
+  const maxPeriods = Math.round(domain[1]);
+  const halfStep = maxPeriods > 1 ? (xScale(2) - xScale(1)) / 2 : xScale(1) / 2;
+
+  const ribbonG = g.append("g").attr("transform", `translate(0,${yOffset})`);
+
+  for (const [period, leaderId] of leaders.entries()) {
+    const dungeonIdx = dungeons.findIndex(d => d.id === leaderId);
+    const color = dungeonIdx >= 0 ? dungeonColor(dungeonIdx) : "#3f3f46";
+    ribbonG
+      .append("rect")
+      .attr("x", xScale(period) - halfStep)
+      .attr("y", 0)
+      .attr("width", halfStep * 2)
+      .attr("height", ribbonHeight)
+      .attr("fill", color)
+      .attr("opacity", 0.85)
+      .style("pointer-events", "none");
+  }
+}
+
+function renderComparisonView(
+  container: HTMLElement,
+  dungeons: DungeonMeta[],
+  dungeonData: Map<number, ArcEntry[]>,
+  comparisonSeasonId: number,
+  affixImpactCache: Map<string, Map<number, { affixName: string; impactDelta: number }>>,
+): void {
+  const rowsByDungeon = new Map<number, WeeklyArcRow[]>();
+  for (const dungeon of dungeons) {
+    const entry = (dungeonData.get(dungeon.id) ?? []).find(
+      e => e.season.id === comparisonSeasonId,
+    );
+    if (entry && entry.rows.length > 0) rowsByDungeon.set(dungeon.id, entry.rows);
+  }
+  if (rowsByDungeon.size === 0) return;
+
+  const allRows = Array.from(rowsByDungeon.values()).flat();
+  const maxPeriods = Math.max(...allRows.map(r => r.period_index));
+  const RIBBON_H = 8;
+
+  const width = container.clientWidth - MARGIN.left - MARGIN.right;
+  const height = container.clientHeight - MARGIN.top - MARGIN.bottom - TITLE_H - CHIP_H;
+  const chartHeight = height - RIBBON_H;
+
+  const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
+  const yScale = d3.scaleLinear().domain(keyDomain).range([chartHeight, 0]);
+
+  const lineGen = d3
+    .line<WeeklyArcRow>()
+    .x(r => xScale(r.period_index))
+    .y(r => yScale(r.median_key))
+    .curve(d3.curveMonotoneX);
+
+  const svgHeight = container.clientHeight - TITLE_H - CHIP_H;
+  const svg = d3
+    .select(container)
+    .append("svg")
+    .attr("width", container.clientWidth)
+    .attr("height", svgHeight)
+    .style("font-family", "sans-serif");
+
+  const g = svg
+    .append("g")
+    .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
+
+  drawAxes(g, xScale, yScale, chartHeight, width);
+
+  for (let i = 0; i < dungeons.length; i++) {
+    const dungeon = dungeons[i];
+    const rows = rowsByDungeon.get(dungeon.id);
+    if (!rows) continue;
+    const color = dungeonColor(i);
+
+    g.append("path")
+      .datum(rows)
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-width", 2.5)
+      .attr("opacity", 1)
+      .attr("d", lineGen);
+
+    for (const row of rows) {
+      g.append("circle")
+        .attr("cx", xScale(row.period_index))
+        .attr("cy", yScale(row.median_key))
+        .attr("r", 3)
+        .attr("fill", color)
+        .style("pointer-events", "none");
+    }
+  }
+
+  drawLeaderRibbon(g, dungeons, rowsByDungeon, xScale, chartHeight, RIBBON_H);
+  drawComparisonTooltip(
+    g,
+    dungeons,
+    rowsByDungeon,
+    xScale,
+    yScale,
+    width,
+    chartHeight,
+    TITLE_H + CHIP_H,
+    container,
+    comparisonSeasonId,
+    affixImpactCache,
+  );
+}
+
 function renderSeasonChips(
   container: HTMLElement,
   sharedSeasons: SeasonMeta[],
@@ -326,7 +464,7 @@ function renderMultiArc(
   }
 
   if (comparisonSeasonId !== null) {
-    void affixImpactCache;
+    renderComparisonView(container, dungeons, dungeonData, comparisonSeasonId, affixImpactCache);
     return;
   }
 
