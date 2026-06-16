@@ -1,0 +1,672 @@
+{
+  "dungeons": [
+    {
+      "id": 247,
+      "name": "The MOTHERLODE!!",
+      "abbrev": "MTHL",
+      "era": "bfa",
+      "zone": "kezan",
+      "offWorld": false
+    },
+    {
+      "id": 248,
+      "name": "Waycrest Manor",
+      "abbrev": "WCM",
+      "era": "bfa",
+      "zone": "drustvar",
+      "offWorld": false
+    },
+    {
+      "id": 249,
+      "name": "Kings' Rest",
+      "abbrev": "KR",
+      "era": "bfa",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 250,
+      "name": "Temple of Sethraliss",
+      "abbrev": "ToS",
+      "era": "bfa",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 251,
+      "name": "The Underrot",
+      "abbrev": "UNDR",
+      "era": "bfa",
+      "zone": "nazmir",
+      "offWorld": false
+    },
+    {
+      "id": 252,
+      "name": "Shrine of the Storm",
+      "abbrev": "SotS",
+      "era": "bfa",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 244,
+      "name": "Atal'Dazar",
+      "abbrev": "ADZ",
+      "era": "bfa",
+      "zone": "zuldazar",
+      "offWorld": false
+    },
+    {
+      "id": 245,
+      "name": "Freehold",
+      "abbrev": "FH",
+      "era": "bfa",
+      "zone": "tiragarde-sound",
+      "offWorld": false
+    },
+    {
+      "id": 246,
+      "name": "Tol Dagor",
+      "abbrev": "TD",
+      "era": "bfa",
+      "zone": "unknown",
+      "offWorld": false
+    },
+    {
+      "id": 353,
+      "name": "Siege of Boralus",
+      "abbrev": "SotB",
+      "era": "bfa",
+      "zone": "tiragarde-sound",
+      "offWorld": false
+    },
+    {
+      "id": 375,
+      "name": "Mists of Tirna Scithe",
+      "abbrev": "MoTS",
+      "era": "shadowlands",
+      "zone": "ardenweald",
+      "offWorld": true
+    },
+    {
+      "id": 376,
+      "name": "The Necrotic Wake",
+      "abbrev": "NW",
+      "era": "shadowlands",
+      "zone": "bastion",
+      "offWorld": true
+    },
+    {
+      "id": 377,
+      "name": "De Other Side",
+      "abbrev": "DOS",
+      "era": "shadowlands",
+      "zone": "de-other-side",
+      "offWorld": true
+    },
+    {
+      "id": 378,
+      "name": "Halls of Atonement",
+      "abbrev": "HoA",
+      "era": "shadowlands",
+      "zone": "revendreth",
+      "offWorld": true
+    },
+    {
+      "id": 379,
+      "name": "Plaguefall",
+      "abbrev": "PF",
+      "era": "shadowlands",
+      "zone": "maldraxxus",
+      "offWorld": true
+    },
+    {
+      "id": 380,
+      "name": "Sanguine Depths",
+      "abbrev": "SD",
+      "era": "shadowlands",
+      "zone": "revendreth",
+      "offWorld": true
+    },
+    {
+      "id": 381,
+      "name": "Spires of Ascension",
+      "abbrev": "SoA",
+      "era": "shadowlands",
+      "zone": "bastion",
+      "offWorld": true
+    },
+    {
+      "id": 382,
+      "name": "Theater of Pain",
+      "abbrev": "ToP",
+      "era": "shadowlands",
+      "zone": "maldraxxus",
+      "offWorld": true
+    },
+    {
+      "id": 369,
+      "name": "Operation: Mechagon - Junkyard",
+      "abbrev": "OJY",
+      "era": "bfa",
+      "zone": "operation-mechagon",
+      "offWorld": true
+    },
+    {
+      "id": 370,
+      "name": "Operation: Mechagon - Workshop",
+      "abbrev": "OWS",
+      "era": "bfa",
+      "zone": "operation-mechagon",
+      "offWorld": true
+    },
+    {
+      "id": 391,
+      "name": "Tazavesh: Streets of Wonder",
+      "abbrev": "TazS",
+      "era": "shadowlands",
+      "zone": "tazavesh-the-veiled-market",
+      "offWorld": true
+    },
+    {
+      "id": 392,
+      "name": "Tazavesh: So'leah's Gambit",
+      "abbrev": "TazG",
+      "era": "shadowlands",
+      "zone": "tazavesh-the-veiled-market",
+      "offWorld": true
+    },
+    {
+      "id": 169,
+      "name": "Iron Docks",
+      "abbrev": "IRD",
+      "era": "wod",
+      "zone": "iron-docks",
+      "offWorld": true
+    },
+    {
+      "id": 166,
+      "name": "Grimrail Depot",
+      "abbrev": "GRD",
+      "era": "wod",
+      "zone": "grimrail-depot",
+      "offWorld": true
+    },
+    {
+      "id": 234,
+      "name": "Return to Karazhan: Upper",
+      "abbrev": "RKU",
+      "era": "legion",
+      "zone": "deadwind-pass",
+      "offWorld": false
+    },
+    {
+      "id": 227,
+      "name": "Return to Karazhan: Lower",
+      "abbrev": "RKL",
+      "era": "legion",
+      "zone": "deadwind-pass",
+      "offWorld": false
+    },
+    {
+      "id": 206,
+      "name": "Neltharion's Lair",
+      "abbrev": "NL",
+      "era": "legion",
+      "zone": "highmountain",
+      "offWorld": false
+    },
+    {
+      "id": 403,
+      "name": "Uldaman: Legacy of Tyr",
+      "abbrev": "ULD",
+      "era": "dragonflight",
+      "zone": "badlands",
+      "offWorld": false
+    },
+    {
+      "id": 404,
+      "name": "Neltharus",
+      "abbrev": "NTH",
+      "era": "dragonflight",
+      "zone": "forbidden-reach",
+      "offWorld": false
+    },
+    {
+      "id": 405,
+      "name": "Brackenhide Hollow",
+      "abbrev": "BHH",
+      "era": "dragonflight",
+      "zone": "azure-span",
+      "offWorld": false
+    },
+    {
+      "id": 406,
+      "name": "Halls of Infusion",
+      "abbrev": "HoI",
+      "era": "dragonflight",
+      "zone": "thaldraszus",
+      "offWorld": false
+    },
+    {
+      "id": 438,
+      "name": "The Vortex Pinnacle",
+      "abbrev": "VP",
+      "era": "cataclysm",
+      "zone": "uldum",
+      "offWorld": false
+    },
+    {
+      "id": 399,
+      "name": "Ruby Life Pools",
+      "abbrev": "RLP",
+      "era": "dragonflight",
+      "zone": "waking-shores",
+      "offWorld": false
+    },
+    {
+      "id": 400,
+      "name": "The Nokhud Offensive",
+      "abbrev": "NOK",
+      "era": "dragonflight",
+      "zone": "ohnahran-plains",
+      "offWorld": false
+    },
+    {
+      "id": 401,
+      "name": "The Azure Vault",
+      "abbrev": "AV",
+      "era": "dragonflight",
+      "zone": "azure-span",
+      "offWorld": false
+    },
+    {
+      "id": 402,
+      "name": "Algeth'ar Academy",
+      "abbrev": "AlAc",
+      "era": "dragonflight",
+      "zone": "thaldraszus",
+      "offWorld": false
+    },
+    {
+      "id": 168,
+      "name": "The Everbloom",
+      "abbrev": "EVB",
+      "era": "wod",
+      "zone": "the-everbloom",
+      "offWorld": true
+    },
+    {
+      "id": 198,
+      "name": "Darkheart Thicket",
+      "abbrev": "DHT",
+      "era": "legion",
+      "zone": "val-sharah",
+      "offWorld": false
+    },
+    {
+      "id": 199,
+      "name": "Black Rook Hold",
+      "abbrev": "BRH",
+      "era": "legion",
+      "zone": "val-sharah",
+      "offWorld": false
+    },
+    {
+      "id": 463,
+      "name": "Dawn of the Infinite: Galakrond's Fall",
+      "abbrev": "DTIG",
+      "era": "dragonflight",
+      "zone": "dawn-of-the-infinite",
+      "offWorld": true
+    },
+    {
+      "id": 464,
+      "name": "Dawn of the Infinite: Murozond's Rise",
+      "abbrev": "DTIM",
+      "era": "dragonflight",
+      "zone": "dawn-of-the-infinite",
+      "offWorld": true
+    },
+    {
+      "id": 456,
+      "name": "Throne of the Tides",
+      "abbrev": "TotT",
+      "era": "cataclysm",
+      "zone": "vashj-ir",
+      "offWorld": false
+    },
+    {
+      "id": 525,
+      "name": "Operation: Floodgate",
+      "abbrev": "FLG",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 499,
+      "name": "Priory of the Sacred Flame",
+      "abbrev": "PSF",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 500,
+      "name": "The Rookery",
+      "abbrev": "RKY",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 504,
+      "name": "Darkflame Cleft",
+      "abbrev": "DfC",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 506,
+      "name": "Cinderbrew Meadery",
+      "abbrev": "CBM",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 501,
+      "name": "The Stonevault",
+      "abbrev": "StV",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 502,
+      "name": "City of Threads",
+      "abbrev": "CoT",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 503,
+      "name": "Ara-Kara, City of Echoes",
+      "abbrev": "ArK",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 505,
+      "name": "The Dawnbreaker",
+      "abbrev": "DWN",
+      "era": "tww",
+      "zone": "khaz-algar",
+      "offWorld": false
+    },
+    {
+      "id": 507,
+      "name": "Grim Batol",
+      "abbrev": "GB",
+      "era": "cataclysm",
+      "zone": "twilight-highlands",
+      "offWorld": false
+    },
+    {
+      "id": 542,
+      "name": "Eco-Dome Al'dani",
+      "abbrev": "EDA",
+      "era": "tww",
+      "zone": "ecodome-aldani",
+      "offWorld": true
+    }
+  ],
+  "seasons": [
+    {
+      "id": 1,
+      "name": "Mythic+ Dungeons (Vanilla Season 1)",
+      "startTimestamp": 1535500800000,
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Mythic+ Dungeons (Vanilla Season 2)",
+      "startTimestamp": 1548169200000,
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Mythic+ Dungeons (Vanilla Season 3)",
+      "startTimestamp": 1562684400000,
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Mythic+ Dungeons (Vanilla Season 4)",
+      "startTimestamp": 1579618800000,
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353,
+        369,
+        370
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Mythic+ Dungeons (Shadowlands Season 1)",
+      "startTimestamp": 1606172400000,
+      "dungeonIds": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        244,
+        245,
+        246,
+        353,
+        369,
+        370
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Mythic+ Dungeons (Shadowlands Season 2)",
+      "startTimestamp": 1625583600000,
+      "dungeonIds": [
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Mythic+ Dungeons (Shadowlands Season 3)",
+      "startTimestamp": 1646146800000,
+      "dungeonIds": [
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        391,
+        392
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Mythic+ Dungeons (Shadowlands Season 4)",
+      "startTimestamp": 1659452400000,
+      "dungeonIds": [
+        169,
+        166,
+        234,
+        227,
+        369,
+        370,
+        391,
+        392
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Mythic+ Dungeons (Dragonflight Season 1)",
+      "startTimestamp": 1669676400000,
+      "dungeonIds": [
+        169,
+        166,
+        234,
+        227,
+        369,
+        370,
+        391,
+        392
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Mythic+ Dungeons (Dragonflight Season 2)",
+      "startTimestamp": 1683644400000,
+      "dungeonIds": [
+        206,
+        251,
+        245,
+        403,
+        404,
+        405,
+        406,
+        438
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Mythic+ Dungeons (Dragonflight Season 3)",
+      "startTimestamp": 1699974000000,
+      "dungeonIds": [
+        168,
+        198,
+        199,
+        248,
+        244,
+        463,
+        464,
+        456
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Mythic+ Dungeons (Dragonflight Season 4)",
+      "startTimestamp": 1713884400000,
+      "dungeonIds": [
+        399,
+        400,
+        401,
+        402,
+        403,
+        404,
+        405,
+        406
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Mythic+ Dungeons (The War Within Season 1)",
+      "startTimestamp": 1725980400000,
+      "dungeonIds": [
+        353,
+        375,
+        376,
+        501,
+        502,
+        503,
+        505,
+        507
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Mythic+ Dungeons (The War Within Season 2)",
+      "startTimestamp": 1741100400000,
+      "dungeonIds": [
+        247,
+        370,
+        382,
+        525,
+        499,
+        500,
+        504,
+        506
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Mythic+ Dungeons (The War Within Season 3)",
+      "startTimestamp": 1754406000000,
+      "dungeonIds": [
+        378,
+        391,
+        392,
+        525,
+        499,
+        503,
+        505,
+        542
+      ]
+    }
+  ],
+  "zones": []
+}

@@ -178,6 +178,11 @@ html, body {
   display: block;
 }
 
+.tile-tooltip--below {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
 .dungeon-browser-legend {
   display: flex;
   flex-wrap: wrap;

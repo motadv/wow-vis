@@ -1,7 +1,7 @@
 import { fetchToken } from './auth.js';
 import { fetchAllDungeons, fetchSeasonIds, fetchSeason, fetchLeaderboard } from './blizzard.js';
 import { transformLeaderboard } from './transform.js';
-import { ensureOutDir, writeParquet, writeManifest, writeAffixManifest } from './write.js';
+import { ensureOutDir, writeParquet, readManifest, writeManifest, writeAffixManifest } from './write.js';
 import type { AffixManifest, DungeonManifest, DungeonMeta, SeasonMeta, LeaderboardEntry } from './types.js';
 
 const clientId = process.env.VITE_BLIZZARD_CLIENT_ID;
@@ -33,7 +33,6 @@ async function discoverActiveDungeons(
   periods: number[],
   realmId: number,
 ): Promise<number[]> {
-  // Try each period in order; stop as soon as we find one with data.
   for (const periodId of periods) {
     const active: number[] = [];
     for (const dungeonId of allDungeonIds) {
@@ -166,13 +165,22 @@ async function main() {
   const dungeonNameById = new Map(allDungeons.map(d => [d.id, d.name]));
   console.log(`Known dungeon pool: ${allDungeonIds.length} dungeons`);
 
-  const now = Date.now();
-  const seasonIds = await fetchSeasonIds(token);
-  console.log(`Found ${seasonIds.length} seasons: ${seasonIds.join(', ')}`);
+  const fetchSeasonsEnv = process.env.FETCH_SEASONS;
+  const targetSeasons = fetchSeasonsEnv
+    ? fetchSeasonsEnv.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
+    : null;
+
+  const allSeasonIds = await fetchSeasonIds(token);
+  const seasonIds = targetSeasons
+    ? allSeasonIds.filter(id => targetSeasons.includes(id))
+    : allSeasonIds;
+  if (targetSeasons) {
+    console.log(`Targeting seasons: ${seasonIds.join(', ')} (FETCH_SEASONS=${fetchSeasonsEnv})`);
+  } else {
+    console.log(`Found ${seasonIds.length} seasons: ${seasonIds.join(', ')}`);
+  }
 
   const dungeonMap = new Map<number, DungeonMeta>();
-  const seasons: SeasonMeta[] = [];
-  const affixManifest: AffixManifest = {};
 
   const batchSize = 3;
   const seasonResults: ProcessSeasonResult[] = [];
@@ -219,17 +227,34 @@ async function main() {
     }
   }
 
-  const manifest: DungeonManifest = {
-    dungeons: Array.from(dungeonMap.values()),
-    seasons: seasons_final,
-    zones: [],
-  };
+  if (targetSeasons) {
+    const manifest = await readManifest();
+    for (const result of seasonResults) {
+      if (!result.success) continue;
+      const existing = manifest.seasons.find(s => s.id === result.seasonId);
+      if (existing) {
+        existing.dungeonIds = result.seasonMeta.dungeonIds;
+        console.log(`  Updated dungeonIds for season ${result.seasonId}: [${result.seasonMeta.dungeonIds.join(', ')}]`);
+      } else {
+        manifest.seasons.push(result.seasonMeta);
+        console.log(`  Added season ${result.seasonId} to manifest`);
+      }
+    }
+    await writeManifest(manifest);
+    console.log('\nUpdated dungeonIds in public/data/dungeons.json (manual metadata preserved).');
+  } else {
+    const manifest: DungeonManifest = {
+      dungeons: Array.from(dungeonMap.values()),
+      seasons: seasons_final,
+      zones: [],
+    };
 
-  await writeManifest(manifest);
-  console.log('\nWritten public/data/dungeons.json');
+    await writeManifest(manifest);
+    console.log('\nWritten public/data/dungeons.json');
 
-  await writeAffixManifest(affixManifest_final);
-  console.log('Written public/data/affixes.json');
+    await writeAffixManifest(affixManifest_final);
+    console.log('Written public/data/affixes.json');
+  }
 
   if (failed.length > 0) {
     console.log('\n⚠️  Failed seasons:');

@@ -1,4 +1,4 @@
-import { mkdir, writeFile, unlink } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import duckdb from 'duckdb';
@@ -32,6 +32,11 @@ export async function writeParquet(seasonId: number, entries: LeaderboardEntry[]
   });
 
   await unlink(tmpPath);
+}
+
+export async function readManifest(): Promise<DungeonManifest> {
+  const raw = await readFile(join(OUT_DIR, 'dungeons.json'), 'utf8');
+  return JSON.parse(raw) as DungeonManifest;
 }
 
 export async function writeManifest(manifest: DungeonManifest): Promise<void> {

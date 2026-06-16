@@ -135,7 +135,12 @@ export async function initDungeonBrowser(
         tooltip.appendChild(document.createTextNode(`Rank ${r.rank} of ${r.total}`));
         tile.appendChild(tooltip);
 
-        tile.addEventListener('mouseenter', () => applyHighlight(dungeon.id));
+        tile.addEventListener('mouseenter', () => {
+          applyHighlight(dungeon.id);
+          const rect = tile.getBoundingClientRect();
+          const tooltipHeight = 100; // conservative estimate before it's visible
+          tooltip.classList.toggle('tile-tooltip--below', rect.top < tooltipHeight + 16);
+        });
         tile.addEventListener('mouseleave', clearHighlight);
         tile.onclick = (e) => handleTileClick(dungeon.id, e as MouseEvent);
 
