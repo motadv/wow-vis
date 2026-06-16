@@ -224,7 +224,7 @@ function renderArc(
   const colors = d3.schemeTableau10 as readonly string[];
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
   const height = container.clientHeight - MARGIN.top - MARGIN.bottom - TITLE_H;
-  const maxPeriods = Math.max(...arcs.map((a) => a.rows.length));
+  const maxPeriods = Math.max(...arcs.flatMap((a) => a.rows.map((r) => r.period_index)));
 
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
   const yScale = d3.scaleLinear().domain(keyDomain).range([height, 0]);
@@ -658,7 +658,7 @@ function renderMultiArc(
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
   const height =
     container.clientHeight - MARGIN.top - MARGIN.bottom - totalTitleH - chipOffset;
-  const maxPeriods = Math.max(...allSeasonRows.map((e) => e.rows.length));
+  const maxPeriods = Math.max(...allSeasonRows.flatMap((e) => e.rows.map((r) => r.period_index)));
 
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
   const yScale = d3.scaleLinear().domain(keyDomain).range([height, 0]);

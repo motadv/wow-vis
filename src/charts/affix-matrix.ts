@@ -181,7 +181,7 @@ export function renderAffixMatrix(
 
     // Empty header cell for label column — reserve width so labels aren't stretched
     const labelTh = document.createElement("th");
-    labelTh.style.cssText = "min-width:140px;";
+    labelTh.style.cssText = "min-width:100px;";
     hRow.appendChild(labelTh);
 
     for (const seasonId of data.seasonIds) {
@@ -280,7 +280,7 @@ export function renderAffixMatrix(
       "letter-spacing:1.4px",
       "text-transform:uppercase",
       "color:#e4e4e7",
-      "text-align:left",
+      "text-align:right",
       "padding:12px 12px 3px 0",
       withTopBorder ? "border-top:1px solid #27272a" : "",
     ]
