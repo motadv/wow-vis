@@ -69,12 +69,6 @@ export interface SecondaryAffixImpact {
   impactDelta: number;
 }
 
-export interface PrimaryAffixTrendPoint {
-  period: number;
-  fortifiedMedian: number;
-  tyrannicalMedian: number;
-}
-
 export interface AffixMatrixRow {
   affixId: number;
   affixName: string;
@@ -90,22 +84,9 @@ export interface AffixMatrixData {
   rows: AffixMatrixRow[]; // primary rows first, then secondary sorted by |avgDelta| desc
 }
 
-export interface AffixAnalysisState {
-  selectedDungeonIds: number[];
-  seasonId: number | null;
-  fortifiedFilter: boolean | null; // null = both, true = fortified only, false = tyrannical only
-}
-
 // Application state
 
 export interface AppState {
   selectedDungeons: number[];
   selectedSeasonForArc: number | null;  // which season's line is emphasized; null = all equal
-  affixLens: 'trend' | 'snapshot' | 'headtohead';
-  affixFilters: {
-    dungeonId: number | null;       // lens 1 + 3
-    seasonId: number | null;        // lens 2 + 3; defaults to selectedSeasonForArc
-    fortified: boolean | null;      // lens 3 only; null = both
-    secondaryAffixId: number | null; // lens 1 + 2; null = all weeks
-  };
 }

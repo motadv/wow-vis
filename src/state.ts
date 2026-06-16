@@ -3,13 +3,6 @@ import type { AppState } from './types.js';
 let state: AppState = {
   selectedDungeons: [],
   selectedSeasonForArc: null,
-  affixLens: 'trend',
-  affixFilters: {
-    dungeonId: null,
-    seasonId: null,
-    fortified: null,
-    secondaryAffixId: null,
-  },
 };
 
 type Listener = (state: AppState) => void;
@@ -42,11 +35,4 @@ export function toggleDungeonSelection(dungeonId: number): void {
   }
 
   setState({ selectedDungeons: newSelectedDungeons });
-}
-
-export function selectOnlyDungeon(dungeonId: number): void {
-  setState({
-    selectedDungeons: [dungeonId],
-    selectedSeasonForArc: null,
-  });
 }

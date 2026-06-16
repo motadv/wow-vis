@@ -1,5 +1,4 @@
 import { initDB, getConnection } from '../db/init.js';
-import { initMap } from './map.js';
 import { initDungeonBrowser } from './dungeon-browser.js';
 import { initArc, setKeyDomain } from './arc.js';
 import { initAffixChart } from './affix.js';
@@ -15,7 +14,6 @@ export default async function initViz(): Promise<void> {
 
   const conn = getConnection();
 
-  initMap(document.getElementById('map')!, manifest);
   await initDungeonBrowser(document.getElementById('heatmap')!, manifest, conn);
   initArc(document.getElementById('arc')!, manifest, conn);
 

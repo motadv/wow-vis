@@ -1,29 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cellStyle, buildAffixMatrixData } from './affix-matrix.js';
-
-describe('cellStyle', () => {
-  it('returns dark neutral for null', () => {
-    expect(cellStyle(null)).toEqual({ bg: '#1a1a22', text: '#2e2e38' });
-  });
-  it('returns darkest red for large negative delta', () => {
-    expect(cellStyle(-2.0)).toEqual({ bg: '#7f1d1d', text: '#fca5a5' });
-  });
-  it('returns bright red for moderate negative delta', () => {
-    expect(cellStyle(-0.5)).toEqual({ bg: '#dc2626', text: '#fca5a5' });
-  });
-  it('returns grey for near-zero negative delta', () => {
-    expect(cellStyle(-0.1)).toEqual({ bg: '#27272a', text: '#71717a' });
-  });
-  it('returns grey for zero', () => {
-    expect(cellStyle(0)).toEqual({ bg: '#27272a', text: '#71717a' });
-  });
-  it('returns light green for small positive delta (t=0.08)', () => {
-    expect(cellStyle(0.12)).toEqual({ bg: '#166534', text: '#86efac' });
-  });
-  it('returns darkest green for large positive delta', () => {
-    expect(cellStyle(2.0)).toEqual({ bg: '#064e3b', text: '#34d399' });
-  });
-});
+import { buildAffixMatrixData } from './affix-matrix.js';
 
 describe('buildAffixMatrixData', () => {
   it('places Tyrannical then Fortified as first two rows', () => {
