@@ -14,8 +14,8 @@ export default async function initViz(): Promise<void> {
 
   const conn = getConnection();
 
-  await initDungeonBrowser(document.getElementById('heatmap')!, manifest, conn);
-  initArc(document.getElementById('arc')!, manifest, conn);
+  await initDungeonBrowser(document.getElementById('dungeon-rankings')!, manifest, conn);
+  initArc(document.getElementById('key-progression')!, manifest, conn);
 
   const seasonIds = manifest.seasons
     .filter(s => s.dungeonIds.length > 0 && s.id <= MAX_SEASON)

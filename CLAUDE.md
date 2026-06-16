@@ -64,26 +64,24 @@ Fully static — no backend. Data flow:
 
 ### Dashboard Views
 
-Layout is three-panel (`#heatmap` left, `#right` top-right stacking arc + affix, `#map` bottom-right):
+Layout is three panels stacked vertically (`#dungeon-rankings`, `#key-progression`, `#affix`):
 
-1. **Map** (`src/charts/map.ts`) — D3 world map with dungeon nodes positioned geographically by zone. Dungeon dots colored by era. Nodes are clickable to select dungeons for the arc chart. Off-world dungeons clustered at bottom. Supports pan/zoom.
+1. **Dungeon Rankings by Season** (`src/charts/dungeon-browser.ts`, `#dungeon-rankings`) — Swimlane chart showing all dungeons ranked by median key level per season. Lanes grouped by expansion. Color-coded tiles by dungeon era. Left tile = highest median key (best-performing dungeon). Clicking a tile selects that dungeon for the key progression chart.
 
-2. **Dungeon Rankings by Season** (`src/charts/heatmap.ts`) — Swimlane heatmap showing all dungeons ranked by median key level per season. Lanes grouped by expansion. Color-coded tiles by dungeon era. Left tile = highest median key (best-performing dungeon). Clicking a tile selects that dungeon for the arc chart.
+2. **Key Progression** (`src/charts/arc.ts`, `#key-progression`) — Line chart showing median keystone level progression over time (by week/period) for the selected dungeon. One line per season (color-coded). Tooltips show week number, median key, and season. Empty state prompts user to select a dungeon. Updated when dungeon rankings panel is clicked.
 
-3. **Median Key Level per Week** (`src/charts/arc.ts`) — Line chart showing median keystone level progression over time (by week/period) for the selected dungeon. One line per season (color-coded). Tooltips show week number, median key, and season. Empty state prompts user to select a dungeon. Updated when heatmap or map is clicked.
+3. **Affix Analysis** (`src/charts/affix.ts`, `#affix`) — Interactive panel with controls for filtering and analyzing keystone affixes. Dropdowns to select: dungeon (or all), season, and affix type (Fortified/Tyrannical/all). Shows dungeon performance metrics (count, avg key) grouped by affix combinations. Tabs for different analysis lenses (e.g., per-affix breakdown).
 
-4. **Affix Analysis** (`src/charts/affix.ts`) — Interactive panel with controls for filtering and analyzing keystone affixes. Dropdowns to select: dungeon (or all), season, and affix type (Fortified/Tyrannical/all). Shows dungeon performance metrics (count, avg key) grouped by affix combinations. Tabs for different analysis lenses (e.g., per-affix breakdown).
-
-**Affix panel filtering:** Dynamically shows only seasons where selected dungeons were active (dungeon lineups differ per season). Season selection is synchronized with arc chart via `selectedSeasonForArc` state. Use `getAvailableSeasonsForDungeons()` helper to validate dungeon/season combos before querying.
+**Affix panel filtering:** Dynamically shows only seasons where selected dungeons were active (dungeon lineups differ per season). Season selection is synchronized with key progression chart via `selectedSeasonForArc` state. Use `getAvailableSeasonsForDungeons()` helper to validate dungeon/season combos before querying.
 
 **View Interactions:**
-- **Map ↔ Heatmap ↔ Arc:** Clicking a dungeon node on the map or a tile on the heatmap updates `selectedDungeon` in state, which triggers the arc chart to fetch and display that dungeon's progression.
-- **Heatmap → Arc:** Hovering over dungeon tiles highlights all lanes containing that dungeon across seasons; clicking selects it for the arc chart.
-- **Arc → Heatmap:** Clicking a season label in the arc chart highlights the corresponding lane in the heatmap.
-- **Affix ↔ Arc (Season):** Both views share `selectedSeasonForArc` state. Clicking an arc line selects that season in affix panel; clicking an affix season button updates arc emphasis. "View All" button in arc title resets to null.
+- **Dungeon Rankings ↔ Key Progression:** Clicking a tile in dungeon rankings updates `selectedDungeon` in state, which triggers the key progression chart to fetch and display that dungeon's progression.
+- **Dungeon Rankings hover:** Hovering over dungeon tiles highlights all lanes containing that dungeon across seasons; clicking selects it for the key progression chart.
+- **Key Progression → Dungeon Rankings:** Clicking a season label in the key progression chart highlights the corresponding lane in dungeon rankings.
+- **Affix ↔ Key Progression (Season):** Both views share `selectedSeasonForArc` state. Clicking a line in key progression selects that season in affix panel; clicking an affix season button updates key progression emphasis. "View All" button in key progression title resets to null.
 - **Affix ← Dungeon Selection:** Responds to `selectedDungeons` state and filters available seasons dynamically. Only shows seasons where ALL selected dungeons were active.
 
-The dashboard has four layout zones (`#filters`, `#map`, `#detail`, `#scrubber`) defined in `index.html`. Layout and styling use plain CSS in `src/style.css` — no CSS framework. Tailwind was dropped because `Cross-Origin-Embedder-Policy: require-corp` (required for DuckDB-Wasm SharedArrayBuffer) blocks external CDN scripts that lack a `Cross-Origin-Resource-Policy` header.
+The dashboard layout zones are defined in `index.html`. Layout and styling use plain CSS in `src/style.css` — no CSS framework. Tailwind was dropped because `Cross-Origin-Embedder-Policy: require-corp` (required for DuckDB-Wasm SharedArrayBuffer) blocks external CDN scripts that lack a `Cross-Origin-Resource-Policy` header.
 
 ### TypeScript configs
 
