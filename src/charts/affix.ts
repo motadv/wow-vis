@@ -4,7 +4,7 @@ import { subscribe, setState } from '../state.js';
 import { loadSeason } from '../db/init.js';
 import { dungeonColor } from '../utils/colors.js';
 import { renderAffixMatrix, buildAffixMatrixData } from './affix-matrix.js';
-import { MAX_SEASON } from '../config.js';
+import { MAX_SEASON, DISABLED_SEASONS } from '../config.js';
 import type { DungeonManifest } from '../types.js';
 import { FONT } from '../theme.js';
 
@@ -57,7 +57,7 @@ export async function initAffixChart(
       const color = isMulti ? dungeonColor(idx) : '#e4e4e7';
 
       const availableSeasons = manifest.seasons
-        .filter(s => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON)
+        .filter(s => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON && !DISABLED_SEASONS.has(s.id))
         .map(s => s.id)
         .sort((a, b) => a - b);
 
