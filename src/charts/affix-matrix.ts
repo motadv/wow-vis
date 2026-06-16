@@ -5,6 +5,36 @@ export const MAX_DELTA = 1.5;
 const TYRANNICAL_AFFIX_ID = 9;
 const FORTIFIED_AFFIX_ID  = 10;
 
+// Singleton tooltip element shared across renders
+let tooltipEl: HTMLElement | null = null;
+
+function ensureTooltip(): HTMLElement {
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.style.cssText = [
+      'display:none',
+      'position:fixed',
+      'background:#1c1c26',
+      'border:1px solid #3f3f46',
+      'border-radius:6px',
+      'padding:10px 16px',
+      'pointer-events:none',
+      'z-index:9999',
+      'box-shadow:0 4px 20px rgba(0,0,0,0.65)',
+      'min-width:180px',
+      'line-height:1.5',
+    ].join(';');
+    document.body.appendChild(tooltipEl);
+    document.addEventListener('mousemove', e => {
+      if (tooltipEl && tooltipEl.style.display !== 'none') {
+        tooltipEl.style.left = `${e.clientX + 16}px`;
+        tooltipEl.style.top  = `${e.clientY - 10}px`;
+      }
+    });
+  }
+  return tooltipEl;
+}
+
 export function cellStyle(delta: number | null): { bg: string; text: string } {
   if (delta === null) return { bg: '#1a1a22', text: '#2e2e38' };
   const t = Math.max(-1, Math.min(1, delta / MAX_DELTA));
@@ -71,42 +101,101 @@ function fmt(d: number | null): string {
   return (d >= 0 ? '+' : '') + d.toFixed(2);
 }
 
+function directionLabel(d: number | null): string {
+  if (d === null) return 'no data';
+  if (d > 0.08)  return 'easier';
+  if (d < -0.08) return 'harder';
+  return 'neutral';
+}
+
 export function renderAffixMatrix(
   container: HTMLElement,
   data: AffixMatrixData,
   onSeasonSelect: (seasonId: number | null) => void,
 ): void {
   let selectedCol: number | 'avg' = 'avg';
+  const tooltip = ensureTooltip();
+
+  function showTooltip(affixName: string, colLabel: string, val: number | null): void {
+    const st = cellStyle(val);
+    tooltip.innerHTML = '';
+
+    const valLine = document.createElement('div');
+    valLine.style.cssText = `font-size:16px;font-weight:700;color:${st.text};margin-bottom:3px;`;
+    valLine.textContent = `${fmt(val)} keys (${directionLabel(val)})`;
+
+    const subLine = document.createElement('div');
+    subLine.style.cssText = 'font-size:12px;color:#71717a;';
+    subLine.textContent = `${affixName} · ${colLabel}`;
+
+    tooltip.appendChild(valLine);
+    tooltip.appendChild(subLine);
+    tooltip.style.display = 'block';
+  }
+
+  function hideTooltip(): void {
+    tooltip.style.display = 'none';
+  }
 
   function render(): void {
     container.innerHTML = '';
-    const table = document.createElement('table');
-    table.style.cssText = 'border-collapse:separate;border-spacing:3px;width:100%;';
+    hideTooltip();
 
-    // Header row
+    const table = document.createElement('table');
+    // No width:100% — let the table size naturally so label column isn't stretched
+    table.style.cssText = 'border-collapse:separate;border-spacing:3px;';
+
+    // ── Header row ──
     const thead = document.createElement('thead');
-    const hRow = document.createElement('tr');
-    hRow.appendChild(document.createElement('th'));
+    const hRow  = document.createElement('tr');
+
+    // Empty header cell for label column — reserve width so labels aren't stretched
+    const labelTh = document.createElement('th');
+    labelTh.style.cssText = 'min-width:140px;';
+    hRow.appendChild(labelTh);
 
     for (const seasonId of data.seasonIds) {
       const th = document.createElement('th');
       th.textContent = `S${seasonId}`;
       const isActive = selectedCol === seasonId;
-      th.style.cssText = `padding:5px 8px;font-size:10px;font-weight:700;text-align:center;cursor:pointer;border-radius:4px;color:${isActive ? '#93c5fd' : '#71717a'};background:${isActive ? 'rgba(59,130,246,0.15)' : 'transparent'};`;
+      th.style.cssText = [
+        'min-width:72px',
+        'padding:6px 8px',
+        'font-size:13px',
+        'font-weight:700',
+        'text-align:center',
+        'cursor:pointer',
+        'border-radius:4px',
+        `color:${isActive ? '#93c5fd' : '#71717a'}`,
+        `background:${isActive ? 'rgba(59,130,246,0.15)' : 'transparent'}`,
+      ].join(';');
       th.onclick = () => { selectedCol = seasonId; onSeasonSelect(seasonId); render(); };
       hRow.appendChild(th);
     }
 
-    const avgTh = document.createElement('th');
+    const avgTh    = document.createElement('th');
     avgTh.textContent = 'AVG';
     const avgActive = selectedCol === 'avg';
-    avgTh.style.cssText = `padding:5px 12px;font-size:10px;font-weight:700;text-align:center;cursor:pointer;border-radius:4px;border-left:2px solid #27272a;color:${avgActive ? '#c4b5fd' : '#71717a'};background:${avgActive ? 'rgba(139,92,246,0.18)' : 'transparent'};`;
+    avgTh.style.cssText = [
+      'min-width:72px',
+      'padding:6px 12px',
+      'font-size:13px',
+      'font-weight:700',
+      'text-align:center',
+      'cursor:pointer',
+      'border-radius:4px',
+      'border-left:2px solid #27272a',
+      `color:${avgActive ? '#c4b5fd' : '#71717a'}`,
+      `background:${avgActive ? 'rgba(139,92,246,0.18)' : 'transparent'}`,
+    ].join(';');
     avgTh.onclick = () => { selectedCol = 'avg'; onSeasonSelect(null); render(); };
     hRow.appendChild(avgTh);
     thead.appendChild(hRow);
     table.appendChild(thead);
 
+    // ── Body ──
     const tbody = document.createElement('tbody');
+
     const primaryRows = data.rows.filter(r => r.isPrimary);
     const secondaryRows = [...data.rows.filter(r => !r.isPrimary)].sort((a, b) => {
       const aVal = selectedCol === 'avg' ? a.avgDelta : (a.cells[selectedCol as number] ?? 0);
@@ -114,28 +203,30 @@ export function renderAffixMatrix(
       return Math.abs(bVal) - Math.abs(aVal);
     });
 
-    appendSectionLabel(tbody, 'PRIMARY');
+    appendSectionLabel(tbody, 'PRIMARY', false);
     for (const row of primaryRows) appendDataRow(tbody, row);
 
-    const sepRow = document.createElement('tr');
-    const sepTd = document.createElement('td');
-    sepTd.colSpan = data.seasonIds.length + 2;
-    sepTd.style.cssText = 'height:1px;padding:0;background:#27272a;';
-    sepRow.appendChild(sepTd);
-    tbody.appendChild(sepRow);
-
-    appendSectionLabel(tbody, 'SECONDARY');
+    appendSectionLabel(tbody, 'SECONDARY', true);
     for (const row of secondaryRows) appendDataRow(tbody, row);
 
     table.appendChild(tbody);
     container.appendChild(table);
   }
 
-  function appendSectionLabel(tbody: HTMLElement, label: string): void {
+  function appendSectionLabel(tbody: HTMLElement, label: string, withTopBorder: boolean): void {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
     td.colSpan = data.seasonIds.length + 2;
-    td.style.cssText = 'font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#3f3f46;text-align:right;padding:10px 12px 2px 0;';
+    td.style.cssText = [
+      'font-size:10px',
+      'font-weight:700',
+      'letter-spacing:1.4px',
+      'text-transform:uppercase',
+      'color:#3f3f46',
+      'text-align:right',
+      'padding:12px 12px 3px 0',
+      withTopBorder ? 'border-top:1px solid #27272a' : '',
+    ].filter(Boolean).join(';');
     td.textContent = label;
     tr.appendChild(td);
     tbody.appendChild(tr);
@@ -144,9 +235,17 @@ export function renderAffixMatrix(
   function appendDataRow(tbody: HTMLElement, row: AffixMatrixRow): void {
     const tr = document.createElement('tr');
 
-    const labelTd = document.createElement('td');
+    const labelTd    = document.createElement('td');
     const labelColor = row.isPrimary ? (row.isFortified ? '#3b82f6' : '#f97316') : '#a1a1aa';
-    labelTd.style.cssText = `padding:0 12px 0 0;font-size:11px;font-weight:500;text-align:right;white-space:nowrap;vertical-align:middle;color:${labelColor};`;
+    labelTd.style.cssText = [
+      'padding:0 14px 0 0',
+      'font-size:14px',
+      'font-weight:500',
+      'text-align:right',
+      'white-space:nowrap',
+      'vertical-align:middle',
+      `color:${labelColor}`,
+    ].join(';');
     labelTd.textContent = row.affixName;
     tr.appendChild(labelTd);
 
@@ -155,18 +254,49 @@ export function renderAffixMatrix(
       const st  = cellStyle(val);
       const dim = selectedCol !== 'avg' && selectedCol !== seasonId;
       const td  = document.createElement('td');
-      td.style.cssText = `width:58px;height:22px;border-radius:3px;text-align:center;font-size:9.5px;font-weight:700;vertical-align:middle;font-variant-numeric:tabular-nums;background:${st.bg};color:${st.text};opacity:${dim ? '0.25' : '1'};transition:opacity 0.18s;`;
+      td.style.cssText = [
+        'width:72px',
+        'height:28px',
+        'border-radius:4px',
+        'text-align:center',
+        'font-size:12px',
+        'font-weight:700',
+        'vertical-align:middle',
+        'font-variant-numeric:tabular-nums',
+        'cursor:default',
+        `background:${st.bg}`,
+        `color:${st.text}`,
+        `opacity:${dim ? '0.2' : '1'}`,
+        'transition:opacity 0.18s',
+      ].join(';');
       td.textContent = fmt(val);
-      td.title = `${row.affixName} · S${seasonId}: ${fmt(val)}`;
+      td.addEventListener('mouseenter', () => showTooltip(row.affixName, `S${seasonId}`, val));
+      td.addEventListener('mouseleave', hideTooltip);
       tr.appendChild(td);
     }
 
     const avgSt  = cellStyle(row.avgDelta);
     const avgDim = selectedCol !== 'avg';
     const avgTd  = document.createElement('td');
-    avgTd.style.cssText = `width:58px;height:22px;border-radius:3px;text-align:center;font-size:10.5px;font-weight:800;vertical-align:middle;font-variant-numeric:tabular-nums;border-left:2px solid #27272a;background:${avgSt.bg};color:${avgSt.text};opacity:${avgDim ? '0.25' : '1'};transition:opacity 0.18s;`;
+    avgTd.style.cssText = [
+      'width:72px',
+      'height:28px',
+      'border-radius:4px',
+      'text-align:center',
+      'font-size:13px',
+      'font-weight:800',
+      'vertical-align:middle',
+      'font-variant-numeric:tabular-nums',
+      'cursor:default',
+      'border-left:2px solid #27272a',
+      `background:${avgSt.bg}`,
+      `color:${avgSt.text}`,
+      `opacity:${avgDim ? '0.2' : '1'}`,
+      'transition:opacity 0.18s',
+    ].join(';');
     avgTd.textContent = fmt(row.avgDelta);
-    avgTd.title = `${row.affixName} · Average: ${fmt(row.avgDelta)}`;
+    avgTd.addEventListener('mouseenter', () => showTooltip(row.affixName, 'Average (all seasons)', row.avgDelta));
+    avgTd.addEventListener('mouseleave', hideTooltip);
     tr.appendChild(avgTd);
 
     tbody.appendChild(tr);
