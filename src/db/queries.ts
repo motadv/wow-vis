@@ -65,6 +65,7 @@ export async function getWeeklyArc(
   `);
   return result.toArray().map((r, i) => ({
     period_index: i + 1,
+    period: Number(r.period),
     median_key: Number(r.median_key),
   }));
 }

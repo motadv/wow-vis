@@ -9,6 +9,16 @@ const FORTIFIED_AFFIX_ID  = 10;
 // Singleton tooltip element shared across renders
 let tooltipEl: HTMLElement | null = null;
 
+let rowHighlightStyleInjected = false;
+
+function ensureRowHighlightStyle(): void {
+  if (rowHighlightStyleInjected) return;
+  const style = document.createElement('style');
+  style.textContent = `tr.affix-row-highlight > td:first-child { background: rgba(255,255,255,0.08) !important; border-radius:4px; }`;
+  document.head.appendChild(style);
+  rowHighlightStyleInjected = true;
+}
+
 function ensureTooltip(): HTMLElement {
   if (!tooltipEl) {
     tooltipEl = document.createElement('div');
@@ -113,7 +123,9 @@ export function renderAffixMatrix(
   container: HTMLElement,
   data: AffixMatrixData,
   onSeasonSelect: (seasonId: number | null) => void,
+  affixOrder?: number[],
 ): void {
+  ensureRowHighlightStyle();
   let selectedCol: number | 'avg' = 'avg';
   const tooltip = ensureTooltip();
 
@@ -198,11 +210,20 @@ export function renderAffixMatrix(
     const tbody = document.createElement('tbody');
 
     const primaryRows = data.rows.filter(r => r.isPrimary);
-    const secondaryRows = [...data.rows.filter(r => !r.isPrimary)].sort((a, b) => {
-      const aVal = selectedCol === 'avg' ? a.avgDelta : (a.cells[selectedCol as number] ?? 0);
-      const bVal = selectedCol === 'avg' ? b.avgDelta : (b.cells[selectedCol as number] ?? 0);
-      return Math.abs(bVal) - Math.abs(aVal);
-    });
+    const secondaryUnsorted = data.rows.filter(r => !r.isPrimary);
+    const secondaryRows = affixOrder
+      ? [...secondaryUnsorted].sort((a, b) => {
+          const ai = affixOrder.indexOf(a.affixId);
+          const bi = affixOrder.indexOf(b.affixId);
+          const aPos = ai === -1 ? Infinity : ai;
+          const bPos = bi === -1 ? Infinity : bi;
+          return aPos - bPos;
+        })
+      : [...secondaryUnsorted].sort((a, b) => {
+          const aVal = selectedCol === 'avg' ? (a.avgDelta ?? 0) : (a.cells[selectedCol as number] ?? 0);
+          const bVal = selectedCol === 'avg' ? (b.avgDelta ?? 0) : (b.cells[selectedCol as number] ?? 0);
+          return Math.abs(bVal) - Math.abs(aVal);
+        });
 
     appendSectionLabel(tbody, 'PRIMARY', false);
     for (const row of primaryRows) appendDataRow(tbody, row);
@@ -235,6 +256,13 @@ export function renderAffixMatrix(
 
   function appendDataRow(tbody: HTMLElement, row: AffixMatrixRow): void {
     const tr = document.createElement('tr');
+    tr.dataset.affixId = String(row.affixId);
+    tr.addEventListener('mouseenter', () => {
+      document.querySelectorAll<HTMLElement>(`tr[data-affix-id="${row.affixId}"]`).forEach(el => el.classList.add('affix-row-highlight'));
+    });
+    tr.addEventListener('mouseleave', () => {
+      document.querySelectorAll<HTMLElement>(`tr[data-affix-id="${row.affixId}"]`).forEach(el => el.classList.remove('affix-row-highlight'));
+    });
 
     const labelTd    = document.createElement('td');
     const labelColor = row.isPrimary ? (row.isFortified ? '#3b82f6' : '#f97316') : '#a1a1aa';

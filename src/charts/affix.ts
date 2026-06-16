@@ -39,6 +39,16 @@ export async function initAffixChart(
       container.appendChild(rowEl);
     }
 
+    // Build all matrix data first so we can compute a global affix order for multi-dungeon mode
+    type DungeonEntry = {
+      dungeonId: number;
+      dungeon: (typeof manifest.dungeons)[number];
+      color: string;
+      matrixData: import('../types.js').AffixMatrixData | null;
+      error: boolean;
+    };
+
+    const entries: DungeonEntry[] = [];
     for (let idx = 0; idx < state.selectedDungeons.length; idx++) {
       const dungeonId = state.selectedDungeons[idx];
       const dungeon = manifest.dungeons.find(d => d.id === dungeonId);
@@ -55,6 +65,60 @@ export async function initAffixChart(
 
       await Promise.all(availableSeasons.map(id => loadSeason(id)));
 
+      try {
+        const [primaryDeltas, secondaryData] = await Promise.all([
+          getPrimaryAffixDeltaBySeason(conn, dungeonId, availableSeasons),
+          getSecondaryAffixImpactAllSeasons(conn, dungeonId, availableSeasons),
+        ]);
+        entries.push({ dungeonId, dungeon, color, matrixData: buildAffixMatrixData(dungeonId, availableSeasons, primaryDeltas, secondaryData), error: false });
+      } catch (err) {
+        console.error('Affix matrix error:', err);
+        entries.push({ dungeonId, dungeon, color, matrixData: null, error: true });
+      }
+    }
+
+    // Collect union of all secondary affixes across all matrices
+    const allSecondaryAffixes = new Map<number, string>();
+    for (const entry of entries) {
+      if (!entry.matrixData) continue;
+      for (const row of entry.matrixData.rows.filter(r => !r.isPrimary)) {
+        if (!allSecondaryAffixes.has(row.affixId)) allSecondaryAffixes.set(row.affixId, row.affixName);
+      }
+    }
+
+    // Add filler rows (all-null cells, null avgDelta) for affixes missing from each matrix
+    if (isMulti) {
+      for (const entry of entries) {
+        if (!entry.matrixData) continue;
+        const existingIds = new Set(entry.matrixData.rows.filter(r => !r.isPrimary).map(r => r.affixId));
+        for (const [affixId, affixName] of allSecondaryAffixes) {
+          if (existingIds.has(affixId)) continue;
+          const nullCells = Object.fromEntries(entry.matrixData.seasonIds.map(s => [s, null])) as Record<number, number | null>;
+          entry.matrixData.rows.push({ affixId, affixName, isPrimary: false, cells: nullCells, avgDelta: null });
+        }
+      }
+    }
+
+    // Compute global secondary affix order for consistent row alignment across matrices
+    let globalAffixOrder: number[] | undefined;
+    if (isMulti) {
+      const avgByAffix = new Map<number, number[]>();
+      for (const entry of entries) {
+        if (!entry.matrixData) continue;
+        for (const row of entry.matrixData.rows.filter(r => !r.isPrimary)) {
+          if (row.avgDelta === null) continue;
+          const vals = avgByAffix.get(row.affixId) ?? [];
+          vals.push(Math.abs(row.avgDelta));
+          avgByAffix.set(row.affixId, vals);
+        }
+      }
+      const mean = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+      globalAffixOrder = [...avgByAffix.entries()]
+        .sort((a, b) => mean(b[1]) - mean(a[1]))
+        .map(([id]) => id);
+    }
+
+    for (const { dungeon, color, matrixData, error } of entries) {
       const block = document.createElement('div');
       if (isMulti) {
         block.style.cssText = 'flex-shrink:0;border:1px solid #27272a;border-radius:6px;overflow:hidden;';
@@ -71,23 +135,17 @@ export async function initAffixChart(
       block.appendChild(matrixContainer);
       parent.appendChild(block);
 
-      try {
-        const [primaryDeltas, secondaryData] = await Promise.all([
-          getPrimaryAffixDeltaBySeason(conn, dungeonId, availableSeasons),
-          getSecondaryAffixImpactAllSeasons(conn, dungeonId, availableSeasons),
-        ]);
-
-        const matrixData = buildAffixMatrixData(dungeonId, availableSeasons, primaryDeltas, secondaryData);
-        renderAffixMatrix(matrixContainer, matrixData, (seasonId) => {
-          setState({ selectedSeasonForArc: seasonId });
-        });
-      } catch (err) {
-        console.error('Affix matrix error:', err);
+      if (error || !matrixData) {
         const errDiv = document.createElement('div');
         errDiv.style.cssText = 'color:#ef4444;padding:20px;';
         errDiv.textContent = 'Error loading affix data.';
         matrixContainer.appendChild(errDiv);
+        continue;
       }
+
+      renderAffixMatrix(matrixContainer, matrixData, (seasonId) => {
+        setState({ selectedSeasonForArc: seasonId });
+      }, globalAffixOrder);
     }
   });
 }

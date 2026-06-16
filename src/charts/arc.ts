@@ -452,6 +452,7 @@ function drawLines(
         .attr("r", 3)
         .attr("fill", color)
         .attr("opacity", emphasized ? 1 : 0.3)
+        .attr("data-period", row.period_index)
         .style("pointer-events", "none");
     }
 
@@ -606,6 +607,12 @@ function drawTooltip(
     );
   }
 
+  const hoverCircle = g.append("circle")
+    .attr("r", 0)
+    .attr("fill", "white")
+    .attr("opacity", 0.9)
+    .style("pointer-events", "none");
+
   g.append("rect")
     .attr("width", width)
     .attr("height", height)
@@ -627,6 +634,11 @@ function drawTooltip(
       const row =
         activeArc.rows[Math.max(0, Math.min(idx, activeArc.rows.length - 1))];
       if (!row) return;
+
+      hoverCircle
+        .attr("cx", xScale(row.period_index))
+        .attr("cy", yScale(row.median_key))
+        .attr("r", 5);
 
       const svgX = MARGIN.left + xScale(row.period_index);
       const cardW = 180;
@@ -709,5 +721,6 @@ function drawTooltip(
       tooltipEl.style.display = "none";
       lastHoveredId = null;
       updatePathStyles(null);
+      hoverCircle.attr("r", 0);
     });
 }

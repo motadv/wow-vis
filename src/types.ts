@@ -81,7 +81,7 @@ export interface AffixMatrixRow {
   isPrimary: boolean;
   isFortified?: boolean;                    // set only on primary rows
   cells: Record<number, number | null>;     // seasonId → delta (null = dungeon not in season)
-  avgDelta: number;                         // arithmetic mean across seasons with data
+  avgDelta: number | null;                  // arithmetic mean across seasons with data; null = no data for this dungeon
 }
 
 export interface AffixMatrixData {
