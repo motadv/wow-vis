@@ -3,8 +3,10 @@ import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { getWeeklyArc, getSecondaryAffixImpact } from "../db/queries.js";
 import { loadSeason, getAffixManifest } from "../db/init.js";
 import { getState, setState, subscribe } from "../state.js";
+import { dungeonColor } from "../utils/colors.js";
+import { computeAverageArc } from "../utils/arc-utils.js";
 import { MAX_SEASON } from "../config.js";
-import type { DungeonManifest, SeasonMeta, WeeklyArcRow } from "../types.js";
+import type { DungeonManifest, SeasonMeta, WeeklyArcRow, DungeonMeta } from "../types.js";
 import { FONT } from "../theme.js";
 import { cellStyle } from "./affix-matrix.js";
 
@@ -49,6 +51,7 @@ export function initArc(
 
   let lastSelectionKey = '';
   let lastSingleData: ArcEntry[] = [];
+  let lastMultiData = new Map<number, ArcEntry[]>();
 
   subscribe(async (state) => {
     if (state.selectedDungeons.length === 0) {
@@ -59,7 +62,48 @@ export function initArc(
     }
 
     if (state.selectedDungeons.length > 1) {
-      // multi mode — handled in Task 8
+      const selectionKey = [...state.selectedDungeons].sort().join(',');
+
+      if (selectionKey !== lastSelectionKey) {
+        const newMultiData = new Map<number, ArcEntry[]>();
+
+        for (const dungeonId of state.selectedDungeons) {
+          if (lastMultiData.has(dungeonId)) {
+            newMultiData.set(dungeonId, lastMultiData.get(dungeonId)!);
+            continue;
+          }
+          const activeSeasons = manifest.seasons
+            .filter((s) => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON)
+            .sort((a, b) => a.id - b.id);
+
+          const entries = await Promise.all(
+            activeSeasons.map(async (s, i) => {
+              await loadSeason(s.id);
+              const rows = await getWeeklyArc(conn, dungeonId, s.id);
+              return {
+                season: s,
+                rows,
+                colorIndex: i,
+                secondaryAffixImpact: new Map<number, number>(),
+              };
+            }),
+          );
+          newMultiData.set(dungeonId, entries);
+        }
+
+        const currentKey = [...getState().selectedDungeons].sort().join(',');
+        if (currentKey !== selectionKey) return;
+
+        lastSelectionKey = selectionKey;
+        lastMultiData = newMultiData;
+        lastSingleData = [];
+      }
+
+      const selectedDungeons = state.selectedDungeons
+        .map((id) => manifest.dungeons.find((d) => d.id === id))
+        .filter((d): d is DungeonMeta => d !== undefined);
+
+      renderMultiArc(container, selectedDungeons, lastMultiData);
       return;
     }
 
@@ -88,6 +132,7 @@ export function initArc(
 
       if (getState().selectedDungeons[0] !== dungeonId) return;
       lastSelectionKey = selectionKey;
+      lastMultiData.clear();
     }
 
     const dungeon = manifest.dungeons.find((d) => d.id === dungeonId);
@@ -190,6 +235,122 @@ function renderArc(
     colors,
     container,
   );
+}
+
+function renderMultiArc(
+  container: HTMLElement,
+  dungeons: DungeonMeta[],
+  dungeonData: Map<number, ArcEntry[]>,
+): void {
+  container.replaceChildren();
+  container.style.position = 'relative';
+
+  const titleEl = document.createElement('div');
+  titleEl.style.cssText =
+    'padding:14px 16px 0;display:flex;align-items:center;justify-content:space-between;';
+  const titleText = document.createElement('span');
+  titleText.style.cssText = `font-size:${FONT.large}px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#e4e4e7`;
+  titleText.textContent = `${dungeons.length} Dungeons — Median Key Level per Week`;
+  titleEl.appendChild(titleText);
+  container.appendChild(titleEl);
+
+  const legendEl = document.createElement('div');
+  legendEl.style.cssText = 'padding:6px 16px 4px;display:flex;gap:16px;flex-wrap:wrap;';
+  for (let i = 0; i < dungeons.length; i++) {
+    const color = dungeonColor(i);
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:5px;';
+    const dot = document.createElement('span');
+    dot.style.cssText = `width:10px;height:10px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0;`;
+    const label = document.createElement('span');
+    label.style.cssText = `font-size:${FONT.small}px;color:#e4e4e7;`;
+    label.textContent = dungeons[i].name;
+    item.appendChild(dot);
+    item.appendChild(label);
+    legendEl.appendChild(item);
+  }
+  container.appendChild(legendEl);
+
+  const allSeasonRows: ArcEntry[] = [];
+  for (const entries of dungeonData.values()) allSeasonRows.push(...entries);
+  if (allSeasonRows.length === 0 || allSeasonRows.every((e) => e.rows.length === 0)) return;
+
+  const LEGEND_H = 32;
+  const totalTitleH = TITLE_H + LEGEND_H;
+  const width = container.clientWidth - MARGIN.left - MARGIN.right;
+  const height = container.clientHeight - MARGIN.top - MARGIN.bottom - totalTitleH;
+  const maxPeriods = Math.max(...allSeasonRows.map((e) => e.rows.length));
+
+  const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
+  const yScale = d3.scaleLinear().domain(keyDomain).range([height, 0]);
+
+  type ArcPoint = { period_index: number; median_key: number };
+  const lineGen = d3
+    .line<ArcPoint>()
+    .x((r) => xScale(r.period_index))
+    .y((r) => yScale(r.median_key))
+    .curve(d3.curveMonotoneX);
+
+  const svg = d3
+    .select(container)
+    .append('svg')
+    .attr('width', container.clientWidth)
+    .attr('height', container.clientHeight - totalTitleH)
+    .style('font-family', 'sans-serif');
+
+  const g = svg
+    .append('g')
+    .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
+
+  drawAxes(g, xScale, yScale, height, width);
+
+  for (let i = 0; i < dungeons.length; i++) {
+    const dungeon = dungeons[i];
+    const color = dungeonColor(i);
+    const entries = dungeonData.get(dungeon.id) ?? [];
+
+    for (const { rows } of entries) {
+      if (rows.length === 0) continue;
+      g.append('path')
+        .datum(rows as ArcPoint[])
+        .attr('fill', 'none')
+        .attr('stroke', color)
+        .attr('stroke-width', 1.2)
+        .attr('opacity', 0.35)
+        .attr('d', lineGen);
+    }
+
+    const avgRows = computeAverageArc(entries.map((e) => e.rows));
+    if (avgRows.length === 0) continue;
+
+    g.append('path')
+      .datum(avgRows as ArcPoint[])
+      .attr('fill', 'none')
+      .attr('stroke', color)
+      .attr('stroke-width', 3)
+      .attr('opacity', 1)
+      .attr('d', lineGen);
+
+    for (const pt of avgRows) {
+      g.append('circle')
+        .attr('cx', xScale(pt.period_index))
+        .attr('cy', yScale(pt.median_key))
+        .attr('r', 4)
+        .attr('fill', color)
+        .attr('opacity', 1)
+        .style('pointer-events', 'none');
+    }
+
+    const last = avgRows[avgRows.length - 1];
+    g.append('text')
+      .attr('x', xScale(last.period_index) + 4)
+      .attr('y', yScale(last.median_key))
+      .attr('font-size', FONT.small)
+      .attr('fill', color)
+      .attr('dominant-baseline', 'middle')
+      .style('pointer-events', 'none')
+      .text(dungeon.abbrev);
+  }
 }
 
 function drawAxes(
