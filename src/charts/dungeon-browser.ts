@@ -3,7 +3,7 @@ import { ERA_PALETTE, ERA_LABELS, ERAS_IN_ORDER, MAX_SEASON } from '../config.js
 import { getSeasonRankMatrix } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
 import { computeRanks } from '../utils/ranks.js';
-import { expansionName, seasonLabel } from '../utils/seasons.js';
+import { expansionName } from '../utils/seasons.js';
 import { subscribe, getState, toggleDungeonSelection } from '../state.js';
 import type { DungeonManifest, RankMatrixRow, SeasonMeta } from '../types.js';
 
@@ -87,11 +87,11 @@ export async function initDungeonBrowser(
 
       const labelEl = document.createElement('div');
       labelEl.className = 'lane-label';
-      labelEl.textContent = seasonLabel(season);
+      labelEl.textContent = `S${season.id}`;
 
       // Add F/T split bars
       const splitContainer = document.createElement('div');
-      splitContainer.style.cssText = 'display:flex;gap:2px;align-items:center;margin-left:8px;height:24px;flex:0 0 auto;';
+      splitContainer.style.cssText = 'display:flex;gap:2px;align-items:center;width:52px;height:24px;flex-shrink:0;';
 
       // Fortified bar (blue)
       const fortBar = document.createElement('div');
@@ -128,7 +128,7 @@ export async function initDungeonBrowser(
         nameStrong.textContent = dungeon.name;
         tooltip.appendChild(nameStrong);
         tooltip.appendChild(document.createElement('br'));
-        tooltip.appendChild(document.createTextNode(`${expansion} · ${seasonLabel(season)}`));
+        tooltip.appendChild(document.createTextNode(`${expansion} · S${season.id}`));
         tooltip.appendChild(document.createElement('br'));
         tooltip.appendChild(document.createTextNode(`Median key: +${r.median_key.toFixed(1)}`));
         tooltip.appendChild(document.createElement('br'));
@@ -174,12 +174,19 @@ export async function initDungeonBrowser(
   }
   container.appendChild(legendEl);
 
-  // Keep .tile--selected in sync with global state (multi-select and arc legend clicks)
+  // Keep .tile--selected/.tile--faded in sync with global state and update counter
   subscribe((state) => {
+    const hasSelection = state.selectedDungeons.length > 0;
+
+    subtitleEl.textContent = hasSelection
+      ? `${state.selectedDungeons.length} / 4 selected · Left tile = highest median key level`
+      : 'Oldest season at top · Left tile = highest median key level';
+
     container.querySelectorAll<HTMLElement>('.tile').forEach((tile) => {
       const dungeonId = Number(tile.dataset.dungeonId);
       const isSelected = state.selectedDungeons.includes(dungeonId);
       tile.classList.toggle('tile--selected', isSelected);
+      tile.classList.toggle('tile--faded', hasSelection && !isSelected);
     });
   });
 
