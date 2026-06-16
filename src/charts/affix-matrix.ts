@@ -1,4 +1,5 @@
 import type { AffixMatrixData, AffixMatrixRow } from '../types.js';
+import { FONT } from '../theme.js';
 
 export const MAX_DELTA = 1.5;
 
@@ -121,11 +122,11 @@ export function renderAffixMatrix(
     tooltip.innerHTML = '';
 
     const valLine = document.createElement('div');
-    valLine.style.cssText = `font-size:16px;font-weight:700;color:${st.text};margin-bottom:3px;`;
+    valLine.style.cssText = `font-size:${FONT.large}px;font-weight:700;color:${st.text};margin-bottom:3px;`;
     valLine.textContent = `${fmt(val)} keys (${directionLabel(val)})`;
 
     const subLine = document.createElement('div');
-    subLine.style.cssText = 'font-size:12px;color:#71717a;';
+    subLine.style.cssText = `font-size:${FONT.small}px;color:#71717a;`;
     subLine.textContent = `${affixName} · ${colLabel}`;
 
     tooltip.appendChild(valLine);
@@ -161,7 +162,7 @@ export function renderAffixMatrix(
       th.style.cssText = [
         'min-width:72px',
         'padding:6px 8px',
-        'font-size:13px',
+        `font-size:${FONT.medium}px`,
         'font-weight:700',
         'text-align:center',
         'cursor:pointer',
@@ -179,7 +180,7 @@ export function renderAffixMatrix(
     avgTh.style.cssText = [
       'min-width:72px',
       'padding:6px 12px',
-      'font-size:13px',
+      `font-size:${FONT.medium}px`,
       'font-weight:700',
       'text-align:center',
       'cursor:pointer',
@@ -218,7 +219,7 @@ export function renderAffixMatrix(
     const td = document.createElement('td');
     td.colSpan = data.seasonIds.length + 2;
     td.style.cssText = [
-      'font-size:10px',
+      `font-size:${FONT.tiny}px`,
       'font-weight:700',
       'letter-spacing:1.4px',
       'text-transform:uppercase',
@@ -239,7 +240,7 @@ export function renderAffixMatrix(
     const labelColor = row.isPrimary ? (row.isFortified ? '#3b82f6' : '#f97316') : '#a1a1aa';
     labelTd.style.cssText = [
       'padding:0 14px 0 0',
-      'font-size:14px',
+      `font-size:${FONT.medium}px`,
       'font-weight:500',
       'text-align:right',
       'white-space:nowrap',
@@ -259,7 +260,7 @@ export function renderAffixMatrix(
         'height:28px',
         'border-radius:4px',
         'text-align:center',
-        'font-size:12px',
+        `font-size:${FONT.small}px`,
         'font-weight:700',
         'vertical-align:middle',
         'font-variant-numeric:tabular-nums',
@@ -283,7 +284,7 @@ export function renderAffixMatrix(
       'height:28px',
       'border-radius:4px',
       'text-align:center',
-      'font-size:13px',
+      `font-size:${FONT.medium}px`,
       'font-weight:800',
       'vertical-align:middle',
       'font-variant-numeric:tabular-nums',

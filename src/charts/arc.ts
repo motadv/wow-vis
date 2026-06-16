@@ -5,6 +5,7 @@ import { loadSeason } from '../db/init.js';
 import { getState, setState, subscribe } from '../state.js';
 import { MAX_SEASON } from '../config.js';
 import type { DungeonManifest, SeasonMeta, WeeklyArcRow } from '../types.js';
+import { FONT } from '../theme.js';
 
 type ArcEntry = { season: SeasonMeta; rows: WeeklyArcRow[]; colorIndex: number };
 
@@ -22,7 +23,7 @@ export function initArc(
   conn: AsyncDuckDBConnection,
 ): void {
   const emptyMsg = document.createElement('p');
-  emptyMsg.style.cssText = 'margin:0;padding:16px;font-size:12px;color:#71717a;text-align:center';
+  emptyMsg.style.cssText = `margin:0;padding:16px;font-size:${FONT.small}px;color:#71717a;text-align:center`;
   emptyMsg.textContent = 'Select a dungeon on the map or heatmap to see its weekly progression.';
   container.appendChild(emptyMsg);
 
@@ -81,7 +82,7 @@ function renderArc(
     'padding:14px 16px 0;display:flex;align-items:center;justify-content:space-between;';
 
   const titleText = document.createElement('span');
-  titleText.style.cssText = 'font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#e4e4e7';
+  titleText.style.cssText = `font-size:${FONT.large}px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#e4e4e7`;
   titleText.textContent = `${title} — Median Key Level per Week`;
   titleEl.appendChild(titleText);
 
@@ -90,7 +91,7 @@ function renderArc(
     resetBtn.textContent = 'View All';
     resetBtn.style.cssText = `
       padding:4px 10px;
-      font-size:11px;
+      font-size:${FONT.small}px;
       border:1px solid #666;
       background:transparent;
       color:#999;
@@ -164,13 +165,13 @@ function drawAxes(
     .attr('transform', `translate(0,${height})`)
     .call(d3.axisBottom(xScale).ticks(Math.min(maxPeriods, 10)).tickFormat(d => `W${d}`))
     .call(ax => ax.select('.domain').attr('stroke', '#3f3f46'))
-    .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', 12))
+    .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', FONT.small))
     .call(ax => ax.selectAll('line').attr('stroke', '#3f3f46'));
 
   g.append('g')
     .call(d3.axisLeft(yScale).ticks(5))
     .call(ax => ax.select('.domain').attr('stroke', '#3f3f46'))
-    .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', 12))
+    .call(ax => ax.selectAll('text').attr('fill', '#a1a1aa').attr('font-size', FONT.small))
     .call(ax => ax.selectAll('line').attr('stroke', '#3f3f46'));
 
   g.append('text')
@@ -178,7 +179,7 @@ function drawAxes(
     .attr('x', -height / 2)
     .attr('y', -34)
     .attr('text-anchor', 'middle')
-    .attr('font-size', 12)
+    .attr('font-size', FONT.small)
     .attr('fill', '#71717a')
     .text('Median Key');
 
@@ -186,7 +187,7 @@ function drawAxes(
     .attr('x', width / 2)
     .attr('y', height + 38)
     .attr('text-anchor', 'middle')
-    .attr('font-size', 12)
+    .attr('font-size', FONT.small)
     .attr('fill', '#71717a')
     .text('Week of Season');
 }
@@ -240,7 +241,7 @@ function drawLines(
     g.append('text')
       .attr('x', endX + 4)
       .attr('y', yScale(lastRow.median_key))
-      .attr('font-size', 11)
+      .attr('font-size', FONT.small)
       .attr('fill', color)
       .attr('dominant-baseline', 'middle')
       .attr('opacity', emphasized ? 1 : 0.5)
@@ -259,7 +260,7 @@ function drawLines(
         .attr('x', xScale(peak.period_index))
         .attr('y', yScale(peak.median_key) - 14)
         .attr('text-anchor', 'middle')
-        .attr('font-size', 11)
+        .attr('font-size', FONT.small)
         .attr('font-weight', '700')
         .attr('fill', color)
         .style('pointer-events', 'none')
@@ -296,7 +297,7 @@ function drawTooltip(
   const tooltipEl = document.createElement('div');
   tooltipEl.style.cssText =
     'position:absolute;background:#1c1c1f;border:1px solid #52525b;border-radius:6px;' +
-    'padding:10px 13px;font-size:12px;color:#e4e4e7;line-height:1.7;' +
+    `padding:10px 13px;font-size:${FONT.small}px;color:#e4e4e7;line-height:1.7;` +
     'box-shadow:0 4px 16px rgba(0,0,0,0.5);pointer-events:none;display:none;' +
     'font-family:sans-serif;white-space:nowrap';
   container.appendChild(tooltipEl);
@@ -373,15 +374,15 @@ function drawTooltip(
 
       const weekEl = document.createElement('div');
       weekEl.style.cssText =
-        'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#71717a';
+        `font-size:${FONT.small}px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#71717a`;
       weekEl.textContent = `Week ${row.period_index}`;
 
       const keyEl = document.createElement('div');
-      keyEl.style.cssText = `font-size:16px;font-weight:700;color:${color}`;
+      keyEl.style.cssText = `font-size:${FONT.large}px;font-weight:700;color:${color}`;
       keyEl.textContent = `+${row.median_key.toFixed(1)}`;
 
       const nameEl = document.createElement('div');
-      nameEl.style.cssText = 'font-size:11px;color:#a1a1aa;display:flex;align-items:center;gap:5px';
+      nameEl.style.cssText = `font-size:${FONT.small}px;color:#a1a1aa;display:flex;align-items:center;gap:5px`;
       const dot = document.createElement('span');
       dot.style.cssText =
         `width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0`;

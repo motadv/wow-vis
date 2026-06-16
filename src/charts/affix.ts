@@ -4,6 +4,7 @@ import { subscribe, setState } from '../state.js';
 import { renderAffixMatrix, buildAffixMatrixData } from './affix-matrix.js';
 import { MAX_SEASON } from '../config.js';
 import type { DungeonManifest } from '../types.js';
+import { FONT } from '../theme.js';
 
 export async function initAffixChart(
   conn: AsyncDuckDBConnection,
@@ -49,7 +50,7 @@ export async function initAffixChart(
     }
 
     const title = document.createElement('div');
-    title.style.cssText = 'padding:16px;font-size:16px;font-weight:bold;color:#e4e4e7;border-bottom:1px solid #27272a;';
+    title.style.cssText = `padding:16px;font-size:${FONT.large}px;font-weight:bold;color:#e4e4e7;border-bottom:1px solid #27272a;`;
     title.textContent = `${dungeon.name} — Affix Impact`;
     container.appendChild(title);
 
