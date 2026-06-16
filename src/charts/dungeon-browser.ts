@@ -1,5 +1,5 @@
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import { ERA_PALETTE, ERA_LABELS, ERAS_IN_ORDER, MAX_SEASON } from '../config.js';
+import { ERA_PALETTE, ERA_LABELS, ERAS_IN_ORDER, MAX_SEASON, DISABLED_SEASONS } from '../config.js';
 import { getSeasonRankMatrix } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
 import { computeRanks } from '../utils/ranks.js';
@@ -94,7 +94,8 @@ export async function initDungeonBrowser(
       const entries = bySeason.get(season.id) ?? [];
 
       const lane = document.createElement('div');
-      lane.className = 'lane';
+      const isDisabled = DISABLED_SEASONS.has(season.id);
+      lane.className = isDisabled ? 'lane lane--disabled' : 'lane';
       lane.dataset.seasonId = String(season.id);
 
       const labelEl = document.createElement('div');
@@ -128,11 +129,11 @@ export async function initDungeonBrowser(
         if (!dungeon) continue;
 
         const tile = document.createElement('div');
-        tile.className = 'tile';
+        tile.className = isDisabled ? 'tile tile--disabled' : 'tile';
         tile.dataset.dungeonId = String(dungeon.id);
         tile.dataset.dungeonName = dungeon.name;
         tile.style.background = ERA_PALETTE[dungeon.era];
-        tile.style.cursor = 'pointer';
+        tile.style.cursor = isDisabled ? 'default' : 'pointer';
         tile.textContent = dungeon.abbrev;
 
         const tooltip = document.createElement('div');
@@ -148,18 +149,20 @@ export async function initDungeonBrowser(
         tooltip.appendChild(document.createTextNode(`Rank ${r.rank} of ${r.total}`));
         tile.appendChild(tooltip);
 
-        tile.addEventListener('mouseenter', () => {
-          if (searchQuery.length > 0) return;
-          applyHighlight(dungeon.id);
-          const rect = tile.getBoundingClientRect();
-          const tooltipHeight = 100; // conservative estimate before it's visible
-          tooltip.classList.toggle('tile-tooltip--below', rect.top < tooltipHeight + 16);
-        });
-        tile.addEventListener('mouseleave', () => {
-          if (searchQuery.length > 0) return;
-          clearHighlight();
-        });
-        tile.onclick = (e) => handleTileClick(dungeon.id, e as MouseEvent);
+        if (!isDisabled) {
+          tile.addEventListener('mouseenter', () => {
+            if (searchQuery.length > 0) return;
+            applyHighlight(dungeon.id);
+            const rect = tile.getBoundingClientRect();
+            const tooltipHeight = 100;
+            tooltip.classList.toggle('tile-tooltip--below', rect.top < tooltipHeight + 16);
+          });
+          tile.addEventListener('mouseleave', () => {
+            if (searchQuery.length > 0) return;
+            clearHighlight();
+          });
+          tile.onclick = (e) => handleTileClick(dungeon.id, e as MouseEvent);
+        }
 
         tilesEl.appendChild(tile);
       }
