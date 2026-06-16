@@ -7,7 +7,7 @@ import {
   ERA_PALETTE,
   MAX_SEASON,
 } from "../config.js";
-import { getState, subscribe, setState } from "../state.js";
+import { getState, subscribe, selectOnlyDungeon } from "../state.js";
 import type { DungeonManifest, DungeonMeta } from "../types.js";
 
 const CLUSTER_RADIUS = 40;
@@ -121,16 +121,16 @@ function renderNodes(): void {
     .attr("r", 14)
     .attr("stroke-width", 2)
     .style("cursor", "pointer")
-    .on("click", (_event, d) => setState({ selectedDungeon: d.id, selectedSeasonForArc: null }))
+    .on("click", (_event, d) => selectOnlyDungeon(d.id))
     .merge(nodes)
     .transition()
     .duration(300)
     .attr("fill", (d) => ERA_PALETTE[d.era])
     .attr("stroke", (d) =>
-      d.id === state.selectedDungeon ? "#ffffff" : "rgba(0,0,0,0.4)",
+      state.selectedDungeons.includes(d.id) ? "#ffffff" : "rgba(0,0,0,0.4)",
     )
     .attr("opacity", (d) =>
-      state.selectedDungeon !== null && d.id !== state.selectedDungeon ? 0.5 : 1
+      state.selectedDungeons.length > 0 && !state.selectedDungeons.includes(d.id) ? 0.5 : 1
     );
 
   nodes.exit().remove();
