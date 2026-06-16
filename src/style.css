@@ -41,7 +41,7 @@ html, body {
 #arc {
   flex: 0 0 auto;
   min-height: 400px;
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: visible;
   background: #18181b;
   border-bottom: 1px solid #27272a;

@@ -76,7 +76,7 @@ export function initMap(container: HTMLElement, mf: DungeonManifest): void {
 
   root
     .append("image")
-    .attr("href", "/map.jpg")
+    .attr("href", `${import.meta.env.BASE_URL}map.jpg`)
     .attr("width", MAP_WIDTH)
     .attr("height", MAP_HEIGHT)
     .attr("preserveAspectRatio", "xMidYMid slice");

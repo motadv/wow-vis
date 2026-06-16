@@ -9,7 +9,7 @@ const loadedSeasons = new Set<number>();
 let affixManifest: AffixManifest | null = null;
 
 async function loadAffixes(): Promise<void> {
-  const url = new URL('/data/affixes.json', window.location.origin).href;
+  const url = new URL(`${import.meta.env.BASE_URL}data/affixes.json`, window.location.origin).href;
   const response = await fetch(url);
   affixManifest = await response.json();
 }
@@ -36,7 +36,7 @@ export async function loadSeason(seasonId: number): Promise<void> {
   if (loadedSeasons.has(seasonId)) return;
 
   const name = `season-${seasonId}.parquet`;
-  const url = new URL(`/data/${name}`, window.location.origin).href;
+  const url = new URL(`${import.meta.env.BASE_URL}data/${name}`, window.location.origin).href;
   await db.registerFileURL(name, url, duckdb.DuckDBDataProtocol.HTTP, false);
 
   const table = `leaderboard_${seasonId}`;

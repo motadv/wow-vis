@@ -10,7 +10,7 @@ import type { DungeonManifest } from '../types.js';
 export default async function initViz(): Promise<void> {
   await initDB();
 
-  const response = await fetch('/data/dungeons.json');
+  const response = await fetch(`${import.meta.env.BASE_URL}data/dungeons.json`);
   const manifest: DungeonManifest = await response.json();
 
   const conn = getConnection();
