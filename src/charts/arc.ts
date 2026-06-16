@@ -5,7 +5,7 @@ import { loadSeason, getAffixManifest } from "../db/init.js";
 import { getState, setState, subscribe } from "../state.js";
 import { dungeonColor } from "../utils/colors.js";
 import { computeAverageArc, collectAtWeek } from "../utils/arc-utils.js";
-import { MAX_SEASON } from "../config.js";
+import { MAX_SEASON, DISABLED_SEASONS } from "../config.js";
 import type {
   DungeonManifest,
   SeasonMeta,
@@ -80,7 +80,7 @@ export function initArc(
           }
           const activeSeasons = manifest.seasons
             .filter(
-              (s) => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON,
+              (s) => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON && !DISABLED_SEASONS.has(s.id),
             )
             .sort((a, b) => a.id - b.id);
 
@@ -121,7 +121,7 @@ export function initArc(
 
     if (selectionKey !== lastSelectionKey) {
       const activeSeasonsForDungeon = manifest.seasons
-        .filter((s) => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON)
+        .filter((s) => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON && !DISABLED_SEASONS.has(s.id))
         .sort((a, b) => a.id - b.id);
 
       lastSingleData = await Promise.all(
