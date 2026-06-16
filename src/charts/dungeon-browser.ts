@@ -5,6 +5,7 @@ import { loadSeason } from '../db/init.js';
 import { computeRanks } from '../utils/ranks.js';
 import { expansionName } from '../utils/seasons.js';
 import { subscribe, getState, toggleDungeonSelection } from '../state.js';
+import { matchesDungeonSearch } from '../utils/dungeon-search.js';
 import type { DungeonManifest, RankMatrixRow, SeasonMeta } from '../types.js';
 
 function handleTileClick(dungeonId: number, event: MouseEvent): void {
@@ -55,6 +56,17 @@ export async function initDungeonBrowser(
   subtitleEl.className = 'dungeon-browser-subtitle';
   subtitleEl.textContent = 'Oldest season at top · Left tile = highest median key level';
   container.appendChild(subtitleEl);
+
+  const searchEl = document.createElement('input');
+  searchEl.type = 'search';
+  searchEl.placeholder = 'Search dungeons…';
+  searchEl.className = 'dungeon-browser-search';
+  searchEl.addEventListener('input', () => {
+    searchQuery = searchEl.value.trim();
+    container.classList.toggle('dungeon-browser--searching', searchQuery.length > 0);
+    applyTileClasses();
+  });
+  container.appendChild(searchEl);
 
   const lanesEl = document.createElement('div');
   lanesEl.className = 'dungeon-browser-lanes';
@@ -118,6 +130,7 @@ export async function initDungeonBrowser(
         const tile = document.createElement('div');
         tile.className = 'tile';
         tile.dataset.dungeonId = String(dungeon.id);
+        tile.dataset.dungeonName = dungeon.name;
         tile.style.background = ERA_PALETTE[dungeon.era];
         tile.style.cursor = 'pointer';
         tile.textContent = dungeon.abbrev;
@@ -136,20 +149,17 @@ export async function initDungeonBrowser(
         tile.appendChild(tooltip);
 
         tile.addEventListener('mouseenter', () => {
+          if (searchQuery.length > 0) return;
           applyHighlight(dungeon.id);
           const rect = tile.getBoundingClientRect();
           const tooltipHeight = 100; // conservative estimate before it's visible
           tooltip.classList.toggle('tile-tooltip--below', rect.top < tooltipHeight + 16);
         });
-        tile.addEventListener('mouseleave', clearHighlight);
+        tile.addEventListener('mouseleave', () => {
+          if (searchQuery.length > 0) return;
+          clearHighlight();
+        });
         tile.onclick = (e) => handleTileClick(dungeon.id, e as MouseEvent);
-
-        // Apply initial selection state
-        const currentState = getState();
-        const isSelected = currentState.selectedDungeons.includes(dungeon.id);
-        if (isSelected) {
-          tile.classList.add('tile--selected');
-        }
 
         tilesEl.appendChild(tile);
       }
@@ -179,7 +189,28 @@ export async function initDungeonBrowser(
   }
   container.appendChild(legendEl);
 
-  // Keep .tile--selected/.tile--faded in sync with global state and update counter
+  let searchQuery = '';
+
+  applyTileClasses();
+
+  function applyTileClasses(): void {
+    const currentState = getState();
+    const hasSelection = currentState.selectedDungeons.length > 0;
+    const hasSearch = searchQuery.length > 0;
+
+    container.querySelectorAll<HTMLElement>('.tile').forEach((tile) => {
+      const dungeonId = Number(tile.dataset.dungeonId);
+      const dungeonName = tile.dataset.dungeonName ?? '';
+      const isSelected = currentState.selectedDungeons.includes(dungeonId);
+      const isSearchMatch = hasSearch && matchesDungeonSearch(dungeonName, searchQuery);
+
+      tile.classList.toggle('tile--selected', isSelected);
+      tile.classList.toggle('tile--highlighted', !isSelected && isSearchMatch);
+      tile.classList.toggle('tile--faded', !isSelected && ((hasSearch && !isSearchMatch) || (!hasSearch && hasSelection)));
+    });
+  }
+
+  // Keep tile classes in sync with global state and update counter
   subscribe((state) => {
     const hasSelection = state.selectedDungeons.length > 0;
 
@@ -187,12 +218,7 @@ export async function initDungeonBrowser(
       ? `${state.selectedDungeons.length} / 4 selected · Left tile = highest median key level`
       : 'Oldest season at top · Left tile = highest median key level';
 
-    container.querySelectorAll<HTMLElement>('.tile').forEach((tile) => {
-      const dungeonId = Number(tile.dataset.dungeonId);
-      const isSelected = state.selectedDungeons.includes(dungeonId);
-      tile.classList.toggle('tile--selected', isSelected);
-      tile.classList.toggle('tile--faded', hasSelection && !isSelected);
-    });
+    applyTileClasses();
   });
 
   function applyHighlight(dungeonId: number): void {
