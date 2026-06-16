@@ -263,6 +263,35 @@ export async function getPrimaryAffixTrend(
   }));
 }
 
+export async function getSecondaryAffixImpactAllSeasons(
+  conn: AsyncDuckDBConnection,
+  dungeonId: number,
+  seasonIds: number[],
+): Promise<Array<{ affixId: number; affixName: string; cells: Record<number, number>; avgDelta: number }>> {
+  const perSeason = await Promise.all(
+    seasonIds.map(async seasonId => ({
+      seasonId,
+      impacts: await getSecondaryAffixImpact(conn, dungeonId, seasonId),
+    })),
+  );
+
+  const affixMap = new Map<number, { name: string; cells: Record<number, number> }>();
+  for (const { seasonId, impacts } of perSeason) {
+    for (const { affixId, affixName, impactDelta } of impacts) {
+      if (!affixMap.has(affixId)) {
+        affixMap.set(affixId, { name: affixName, cells: {} });
+      }
+      affixMap.get(affixId)!.cells[seasonId] = impactDelta;
+    }
+  }
+
+  return Array.from(affixMap.entries()).map(([affixId, data]) => {
+    const values = Object.values(data.cells);
+    const avgDelta = values.reduce((a, b) => a + b, 0) / values.length;
+    return { affixId, affixName: data.name, cells: data.cells, avgDelta };
+  });
+}
+
 export async function getPrimaryAffixDeltaBySeason(
   conn: AsyncDuckDBConnection,
   dungeonId: number,
