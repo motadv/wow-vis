@@ -59,6 +59,7 @@ export interface RankMatrixRow {
 
 export interface WeeklyArcRow {
   period_index: number;  // 1-based, derived from ordering raw period IDs ascending
+  period: number;        // raw period ID for affix lookup
   median_key: number;
 }
 
@@ -98,7 +99,7 @@ export interface AffixAnalysisState {
 // Application state
 
 export interface AppState {
-  selectedDungeon: number | null;
+  selectedDungeon?: number | null;
   selectedDungeons: number[];         // multi-select for affix panel
   selectedSeasonForArc: number | null;  // which season's line is emphasized; null = all equal
   affixLens: 'trend' | 'snapshot' | 'headtohead';

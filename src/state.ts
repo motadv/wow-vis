@@ -1,7 +1,6 @@
 import type { AppState } from './types.js';
 
 let state: AppState = {
-  selectedDungeon: null,
   selectedDungeons: [],
   selectedSeasonForArc: null,
   affixLens: 'trend',
@@ -31,21 +30,23 @@ export function subscribe(listener: Listener): () => void {
 }
 
 export function toggleDungeonSelection(dungeonId: number): void {
-  const state = getState();
-  const index = state.selectedDungeons.indexOf(dungeonId);
-  let newSelectedDungeons: number[];
-  let newSelectedDungeon: number | null;
+  const current = getState();
+  const index = current.selectedDungeons.indexOf(dungeonId);
 
+  let newSelectedDungeons: number[];
   if (index > -1) {
-    newSelectedDungeons = state.selectedDungeons.filter(id => id !== dungeonId);
-    newSelectedDungeon = newSelectedDungeons.length === 1 ? newSelectedDungeons[0] : null;
+    newSelectedDungeons = current.selectedDungeons.filter(id => id !== dungeonId);
   } else {
-    newSelectedDungeons = [...state.selectedDungeons, dungeonId];
-    newSelectedDungeon = newSelectedDungeons.length === 1 ? dungeonId : null;
+    if (current.selectedDungeons.length >= 4) return;
+    newSelectedDungeons = [...current.selectedDungeons, dungeonId];
   }
 
+  setState({ selectedDungeons: newSelectedDungeons });
+}
+
+export function selectOnlyDungeon(dungeonId: number): void {
   setState({
-    selectedDungeons: newSelectedDungeons,
-    selectedDungeon: newSelectedDungeon,
+    selectedDungeons: [dungeonId],
+    selectedSeasonForArc: null,
   });
 }
