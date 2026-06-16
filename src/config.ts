@@ -8,6 +8,7 @@ export const OFF_WORLD_X = 2790;
 export const OFF_WORLD_Y = 2409;
 
 export const MAX_SEASON = 12;
+export const DISABLED_SEASONS = new Set([5, 9]);
 
 export const ERAS_IN_ORDER: Era[] = [
   "vanilla",
@@ -43,13 +44,13 @@ export const ERA_PALETTE: Record<Era, string> = {
   vanilla: "#c8a96e",
   tbc: "#7cba5c",
   wotlk: "#6baed6",
-  cataclysm: "#e06c4c",
+  cataclysm: "#a95741ff",
   mop: "#c96e8a",
-  wod: "#a08060",
+  wod: "#4d987eff",
   legion: "#9b59b6",
-  bfa: "#2980b9",
+  bfa: "#5091bbff",
   shadowlands: "#8899bb",
-  dragonflight: "#e8a030",
+  dragonflight: "#c79544ff",
   tww: "#50c878",
   midnight: "#c060d8",
 };
