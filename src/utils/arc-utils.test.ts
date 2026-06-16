@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeAverageArc, collectAtWeek } from './arc-utils.js';
-import type { WeeklyArcRow } from '../types.js';
+import { computeAverageArc, collectAtWeek, computeSharedSeasons, computeWeekLeaders } from './arc-utils.js';
+import type { WeeklyArcRow, SeasonMeta } from '../types.js';
 
 describe('computeAverageArc', () => {
   it('returns empty array for empty input', () => {
@@ -80,5 +80,80 @@ describe('collectAtWeek', () => {
     const arcB = { rows: [{ period_index: 3, period: 203, median_key: 19 }] };
     const result = collectAtWeek([arcA, arcB], 3);
     expect(result).toHaveLength(2);
+  });
+});
+
+describe('computeSharedSeasons', () => {
+  const seasons: SeasonMeta[] = [
+    { id: 4, name: 'S4', startTimestamp: 0, dungeonIds: [1, 2, 3] },
+    { id: 5, name: 'S5', startTimestamp: 0, dungeonIds: [1, 2] },
+    { id: 6, name: 'S6', startTimestamp: 0, dungeonIds: [1, 3] },
+    { id: 7, name: 'S7', startTimestamp: 0, dungeonIds: [2, 3] },
+    { id: 8, name: 'S8', startTimestamp: 0, dungeonIds: [1, 2, 3] },
+  ];
+  const disabled = new Set([5]);
+  const max = 7;
+
+  it('returns only seasons where all given dungeon ids appear', () => {
+    const result = computeSharedSeasons(seasons, [1, 2], disabled, max);
+    expect(result.map(s => s.id)).toEqual([4]);
+  });
+
+  it('excludes disabled seasons', () => {
+    const result = computeSharedSeasons(seasons, [1, 2], disabled, max);
+    expect(result.map(s => s.id)).not.toContain(5);
+  });
+
+  it('excludes seasons beyond maxSeason', () => {
+    const result = computeSharedSeasons(seasons, [1, 2, 3], disabled, max);
+    expect(result.map(s => s.id)).not.toContain(8);
+  });
+
+  it('returns results sorted by id ascending', () => {
+    const result = computeSharedSeasons(seasons, [1], disabled, max);
+    expect(result.map(s => s.id)).toEqual([4, 6]);
+  });
+
+  it('returns empty array when no season contains all dungeons', () => {
+    const result = computeSharedSeasons(seasons, [1, 2, 3], disabled, max);
+    expect(result.map(s => s.id)).toEqual([4]);
+  });
+});
+
+describe('computeWeekLeaders', () => {
+  it('returns the dungeon with the highest median_key each week', () => {
+    const dungeons = [{ id: 1 }, { id: 2 }];
+    const rows = new Map<number, { period_index: number; median_key: number }[]>([
+      [1, [{ period_index: 1, median_key: 20 }, { period_index: 2, median_key: 10 }]],
+      [2, [{ period_index: 1, median_key: 15 }, { period_index: 2, median_key: 25 }]],
+    ]);
+    const result = computeWeekLeaders(dungeons, rows);
+    expect(result.get(1)).toBe(1);
+    expect(result.get(2)).toBe(2);
+  });
+
+  it('assigns the first dungeon in selection order on a tie', () => {
+    const dungeons = [{ id: 1 }, { id: 2 }];
+    const rows = new Map<number, { period_index: number; median_key: number }[]>([
+      [1, [{ period_index: 1, median_key: 15 }]],
+      [2, [{ period_index: 1, median_key: 15 }]],
+    ]);
+    const result = computeWeekLeaders(dungeons, rows);
+    expect(result.get(1)).toBe(1);
+  });
+
+  it('covers all weeks present across any dungeon', () => {
+    const dungeons = [{ id: 1 }, { id: 2 }];
+    const rows = new Map<number, { period_index: number; median_key: number }[]>([
+      [1, [{ period_index: 1, median_key: 10 }, { period_index: 3, median_key: 12 }]],
+      [2, [{ period_index: 2, median_key: 20 }]],
+    ]);
+    const result = computeWeekLeaders(dungeons, rows);
+    expect(result.size).toBe(3);
+  });
+
+  it('returns an empty map when dungeon list is empty', () => {
+    const result = computeWeekLeaders([], new Map());
+    expect(result.size).toBe(0);
   });
 });

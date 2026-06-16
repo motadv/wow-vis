@@ -1,4 +1,4 @@
-import type { WeeklyArcRow } from '../types.js';
+import type { WeeklyArcRow, SeasonMeta } from '../types.js';
 
 export function collectAtWeek<T extends { rows: WeeklyArcRow[] }>(
   arcs: T[],
@@ -31,4 +31,44 @@ export function computeAverageArc(seasonRows: WeeklyArcRow[][]): AverageArcPoint
       median_key: keys.reduce((a, b) => a + b, 0) / keys.length,
     }))
     .sort((a, b) => a.period_index - b.period_index);
+}
+
+export function computeSharedSeasons(
+  seasons: SeasonMeta[],
+  dungeonIds: number[],
+  disabledSeasons: Set<number>,
+  maxSeason: number,
+): SeasonMeta[] {
+  return seasons
+    .filter(s =>
+      s.id <= maxSeason &&
+      !disabledSeasons.has(s.id) &&
+      dungeonIds.every(id => s.dungeonIds.includes(id)),
+    )
+    .sort((a, b) => a.id - b.id);
+}
+
+export function computeWeekLeaders(
+  dungeons: ReadonlyArray<{ id: number }>,
+  rowsByDungeon: Map<number, ReadonlyArray<{ period_index: number; median_key: number }>>,
+): Map<number, number> {
+  const allPeriods = new Set<number>();
+  for (const rows of rowsByDungeon.values()) {
+    for (const r of rows) allPeriods.add(r.period_index);
+  }
+
+  const leaders = new Map<number, number>();
+  for (const period of allPeriods) {
+    let maxKey = -Infinity;
+    let leaderId = dungeons[0]?.id ?? -1;
+    for (const dungeon of dungeons) {
+      const row = (rowsByDungeon.get(dungeon.id) ?? []).find(r => r.period_index === period);
+      if (row && row.median_key > maxKey) {
+        maxKey = row.median_key;
+        leaderId = dungeon.id;
+      }
+    }
+    leaders.set(period, leaderId);
+  }
+  return leaders;
 }
