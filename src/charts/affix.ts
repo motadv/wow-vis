@@ -32,12 +32,19 @@ export async function initAffixChart(
       return;
     }
 
+    const isMulti = state.selectedDungeons.length > 1;
+    const rowEl = document.createElement('div');
+    if (isMulti) {
+      rowEl.style.cssText = 'display:flex;flex-direction:row;gap:24px;overflow-x:auto;padding:8px 0;';
+      container.appendChild(rowEl);
+    }
+
     for (let idx = 0; idx < state.selectedDungeons.length; idx++) {
       const dungeonId = state.selectedDungeons[idx];
       const dungeon = manifest.dungeons.find(d => d.id === dungeonId);
       if (!dungeon) continue;
 
-      const color = state.selectedDungeons.length === 1 ? '#e4e4e7' : dungeonColor(idx);
+      const color = isMulti ? dungeonColor(idx) : '#e4e4e7';
 
       const availableSeasons = manifest.seasons
         .filter(s => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON)
@@ -48,14 +55,21 @@ export async function initAffixChart(
 
       await Promise.all(availableSeasons.map(id => loadSeason(id)));
 
+      const block = document.createElement('div');
+      if (isMulti) {
+        block.style.cssText = 'flex-shrink:0;border:1px solid #27272a;border-radius:6px;overflow:hidden;';
+      }
+      const parent = isMulti ? rowEl : container;
+
       const title = document.createElement('div');
       title.style.cssText = `padding:16px;font-size:${FONT.large}px;font-weight:bold;color:${color};border-bottom:1px solid #27272a;`;
       title.textContent = `${dungeon.name} — Affix Impact`;
-      container.appendChild(title);
+      block.appendChild(title);
 
       const matrixContainer = document.createElement('div');
       matrixContainer.style.cssText = 'padding:20px;overflow-x:auto;';
-      container.appendChild(matrixContainer);
+      block.appendChild(matrixContainer);
+      parent.appendChild(block);
 
       try {
         const [primaryDeltas, secondaryData] = await Promise.all([
