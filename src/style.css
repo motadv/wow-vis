@@ -110,12 +110,15 @@ html, body {
 }
 
 .lane-label {
+  display: grid;
+  grid-template-columns: 28px 52px;
+  gap: 6px;
+  align-items: center;
+  justify-items: center;
   font-size: var(--font-small);
   color: #71717a;
-  width: 68px;
-  text-align: right;
+  width: 86px;
   flex-shrink: 0;
-  white-space: nowrap;
 }
 
 .lane-tiles {
@@ -140,13 +143,17 @@ html, body {
 }
 
 .tile--highlighted {
-  outline: 2px solid #fbbf24;
-  outline-offset: 1px;
+  background: #ffffff !important;
+  color: #18181b !important;
 }
 
 .tile--selected {
-  outline: 2px solid #818cf8;
-  outline-offset: 1px;
+  background: #eab308 !important;
+  color: #18181b !important;
+}
+
+.tile--faded {
+  opacity: 0.6;
 }
 
 .tile-tooltip {
