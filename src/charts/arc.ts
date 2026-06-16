@@ -6,7 +6,12 @@ import { getState, setState, subscribe } from "../state.js";
 import { dungeonColor } from "../utils/colors.js";
 import { computeAverageArc, collectAtWeek } from "../utils/arc-utils.js";
 import { MAX_SEASON } from "../config.js";
-import type { DungeonManifest, SeasonMeta, WeeklyArcRow, DungeonMeta } from "../types.js";
+import type {
+  DungeonManifest,
+  SeasonMeta,
+  WeeklyArcRow,
+  DungeonMeta,
+} from "../types.js";
 import { FONT } from "../theme.js";
 import { cellStyle } from "./affix-matrix.js";
 
@@ -20,6 +25,7 @@ type ArcEntry = {
 };
 
 const MARGIN = { top: 20, right: 60, bottom: 50, left: 44 };
+const TOOLTIP_OFFSET = 100;
 const TYRANNICAL_AFFIX_ID = 9;
 const FORTIFIED_AFFIX_ID = 10;
 
@@ -49,20 +55,20 @@ export function initArc(
     "Select a dungeon on the map or heatmap to see its weekly progression.";
   container.appendChild(emptyMsg);
 
-  let lastSelectionKey = '';
+  let lastSelectionKey = "";
   let lastSingleData: ArcEntry[] = [];
   let lastMultiData = new Map<number, ArcEntry[]>();
 
   subscribe(async (state) => {
     if (state.selectedDungeons.length === 0) {
-      lastSelectionKey = '';
+      lastSelectionKey = "";
       lastSingleData = [];
       container.replaceChildren(emptyMsg);
       return;
     }
 
     if (state.selectedDungeons.length > 1) {
-      const selectionKey = [...state.selectedDungeons].sort().join(',');
+      const selectionKey = [...state.selectedDungeons].sort().join(",");
 
       if (selectionKey !== lastSelectionKey) {
         const newMultiData = new Map<number, ArcEntry[]>();
@@ -73,7 +79,9 @@ export function initArc(
             continue;
           }
           const activeSeasons = manifest.seasons
-            .filter((s) => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON)
+            .filter(
+              (s) => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON,
+            )
             .sort((a, b) => a.id - b.id);
 
           const entries = await Promise.all(
@@ -91,7 +99,7 @@ export function initArc(
           newMultiData.set(dungeonId, entries);
         }
 
-        const currentKey = [...getState().selectedDungeons].sort().join(',');
+        const currentKey = [...getState().selectedDungeons].sort().join(",");
         if (currentKey !== selectionKey) return;
 
         lastSelectionKey = selectionKey;
@@ -138,7 +146,12 @@ export function initArc(
     const dungeon = manifest.dungeons.find((d) => d.id === dungeonId);
     if (!dungeon) return;
 
-    renderArc(container, dungeon.name, lastSingleData, state.selectedSeasonForArc);
+    renderArc(
+      container,
+      dungeon.name,
+      lastSingleData,
+      state.selectedSeasonForArc,
+    );
   });
 }
 
@@ -163,34 +176,6 @@ function renderArc(
   titleText.style.cssText = `font-size:${FONT.large}px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#e4e4e7`;
   titleText.textContent = `${title} — Median Key Level per Week`;
   titleEl.appendChild(titleText);
-
-  if (emphasizedSeasonId !== null) {
-    const resetBtn = document.createElement("button");
-    resetBtn.textContent = "View All";
-    resetBtn.style.cssText = `
-      padding:4px 10px;
-      font-size:${FONT.small}px;
-      border:1px solid #666;
-      background:transparent;
-      color:#999;
-      border-radius:3px;
-      cursor:pointer;
-      transition:all 0.2s ease;
-      font-weight:600;
-    `;
-    resetBtn.onmouseover = () => {
-      resetBtn.style.borderColor = "#8b5cf6";
-      resetBtn.style.color = "#c4b5fd";
-    };
-    resetBtn.onmouseout = () => {
-      resetBtn.style.borderColor = "#666";
-      resetBtn.style.color = "#999";
-    };
-    resetBtn.onclick = () => {
-      setState({ selectedSeasonForArc: null });
-    };
-    titleEl.appendChild(resetBtn);
-  }
 
   container.appendChild(titleEl);
 
@@ -243,26 +228,27 @@ function renderMultiArc(
   dungeonData: Map<number, ArcEntry[]>,
 ): void {
   container.replaceChildren();
-  container.style.position = 'relative';
+  container.style.position = "relative";
 
-  const titleEl = document.createElement('div');
+  const titleEl = document.createElement("div");
   titleEl.style.cssText =
-    'padding:14px 16px 0;display:flex;align-items:center;justify-content:space-between;';
-  const titleText = document.createElement('span');
+    "padding:14px 16px 0;display:flex;align-items:center;justify-content:space-between;";
+  const titleText = document.createElement("span");
   titleText.style.cssText = `font-size:${FONT.large}px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#e4e4e7`;
   titleText.textContent = `${dungeons.length} Dungeons — Median Key Level per Week`;
   titleEl.appendChild(titleText);
   container.appendChild(titleEl);
 
-  const legendEl = document.createElement('div');
-  legendEl.style.cssText = 'padding:6px 16px 4px;display:flex;gap:16px;flex-wrap:wrap;';
+  const legendEl = document.createElement("div");
+  legendEl.style.cssText =
+    "padding:6px 16px 4px;display:flex;gap:16px;flex-wrap:wrap;";
   for (let i = 0; i < dungeons.length; i++) {
     const color = dungeonColor(i);
-    const item = document.createElement('div');
-    item.style.cssText = 'display:flex;align-items:center;gap:5px;';
-    const dot = document.createElement('span');
+    const item = document.createElement("div");
+    item.style.cssText = "display:flex;align-items:center;gap:5px;";
+    const dot = document.createElement("span");
     dot.style.cssText = `width:10px;height:10px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0;`;
-    const label = document.createElement('span');
+    const label = document.createElement("span");
     label.style.cssText = `font-size:${FONT.small}px;color:#e4e4e7;`;
     label.textContent = dungeons[i].name;
     item.appendChild(dot);
@@ -273,12 +259,17 @@ function renderMultiArc(
 
   const allSeasonRows: ArcEntry[] = [];
   for (const entries of dungeonData.values()) allSeasonRows.push(...entries);
-  if (allSeasonRows.length === 0 || allSeasonRows.every((e) => e.rows.length === 0)) return;
+  if (
+    allSeasonRows.length === 0 ||
+    allSeasonRows.every((e) => e.rows.length === 0)
+  )
+    return;
 
   const LEGEND_H = 32;
   const totalTitleH = TITLE_H + LEGEND_H;
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
-  const height = container.clientHeight - MARGIN.top - MARGIN.bottom - totalTitleH;
+  const height =
+    container.clientHeight - MARGIN.top - MARGIN.bottom - totalTitleH;
   const maxPeriods = Math.max(...allSeasonRows.map((e) => e.rows.length));
 
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
@@ -293,14 +284,14 @@ function renderMultiArc(
 
   const svg = d3
     .select(container)
-    .append('svg')
-    .attr('width', container.clientWidth)
-    .attr('height', container.clientHeight - totalTitleH)
-    .style('font-family', 'sans-serif');
+    .append("svg")
+    .attr("width", container.clientWidth)
+    .attr("height", container.clientHeight - totalTitleH)
+    .style("font-family", "sans-serif");
 
   const g = svg
-    .append('g')
-    .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
+    .append("g")
+    .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
 
   drawAxes(g, xScale, yScale, height, width);
 
@@ -311,44 +302,44 @@ function renderMultiArc(
 
     for (const { rows } of entries) {
       if (rows.length === 0) continue;
-      g.append('path')
+      g.append("path")
         .datum(rows as ArcPoint[])
-        .attr('fill', 'none')
-        .attr('stroke', color)
-        .attr('stroke-width', 1.2)
-        .attr('opacity', 0.35)
-        .attr('d', lineGen);
+        .attr("fill", "none")
+        .attr("stroke", color)
+        .attr("stroke-width", 1.2)
+        .attr("opacity", 0.35)
+        .attr("d", lineGen);
     }
 
     const avgRows = computeAverageArc(entries.map((e) => e.rows));
     if (avgRows.length === 0) continue;
 
-    g.append('path')
+    g.append("path")
       .datum(avgRows as ArcPoint[])
-      .attr('fill', 'none')
-      .attr('stroke', color)
-      .attr('stroke-width', 3)
-      .attr('opacity', 1)
-      .attr('d', lineGen);
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-width", 3)
+      .attr("opacity", 1)
+      .attr("d", lineGen);
 
     for (const pt of avgRows) {
-      g.append('circle')
-        .attr('cx', xScale(pt.period_index))
-        .attr('cy', yScale(pt.median_key))
-        .attr('r', 4)
-        .attr('fill', color)
-        .attr('opacity', 1)
-        .style('pointer-events', 'none');
+      g.append("circle")
+        .attr("cx", xScale(pt.period_index))
+        .attr("cy", yScale(pt.median_key))
+        .attr("r", 4)
+        .attr("fill", color)
+        .attr("opacity", 1)
+        .style("pointer-events", "none");
     }
 
     const last = avgRows[avgRows.length - 1];
-    g.append('text')
-      .attr('x', xScale(last.period_index) + 4)
-      .attr('y', yScale(last.median_key))
-      .attr('font-size', FONT.small)
-      .attr('fill', color)
-      .attr('dominant-baseline', 'middle')
-      .style('pointer-events', 'none')
+    g.append("text")
+      .attr("x", xScale(last.period_index) + 4)
+      .attr("y", yScale(last.median_key))
+      .attr("font-size", FONT.small)
+      .attr("fill", color)
+      .attr("dominant-baseline", "middle")
+      .style("pointer-events", "none")
       .text(dungeon.abbrev);
   }
 }
@@ -608,11 +599,12 @@ function drawTooltip(
   }
 
   const hoverCircles = arcs.map(() =>
-    g.append("circle")
+    g
+      .append("circle")
       .attr("r", 0)
       .attr("fill", "white")
       .attr("opacity", 0.9)
-      .style("pointer-events", "none")
+      .style("pointer-events", "none"),
   );
 
   g.append("rect")
@@ -623,7 +615,10 @@ function drawTooltip(
     .style("cursor", "pointer")
     .on("click", (event: MouseEvent) => {
       const [mx, my] = d3.pointer(event);
-      setState({ selectedSeasonForArc: nearestArc(mx, my).season.id });
+      const clicked = nearestArc(mx, my).season.id;
+      setState({
+        selectedSeasonForArc: clicked === emphasizedSeasonId ? null : clicked,
+      });
     })
     .on("mousemove", (event: MouseEvent) => {
       const [mx, my] = d3.pointer(event);
@@ -636,7 +631,10 @@ function drawTooltip(
       if (emphasizedSeasonId === null) {
         // Multi-arc mode: combined tooltip for all seasons at the hovered week
         const maxPeriods = Math.round(xScale.domain()[1]);
-        const periodIndex = Math.max(1, Math.min(Math.round(xScale.invert(mx)), maxPeriods));
+        const periodIndex = Math.max(
+          1,
+          Math.min(Math.round(xScale.invert(mx)), maxPeriods),
+        );
         const dataPoints = collectAtWeek(arcs, periodIndex);
 
         hoverCircles.forEach((circle, i) => {
@@ -659,9 +657,9 @@ function drawTooltip(
         const svgX = MARGIN.left + xScale(periodIndex);
         const cardW = 220;
         const left =
-          svgX + cardW + 16 > container.clientWidth
-            ? svgX - cardW - 12
-            : svgX + 12;
+          svgX + cardW + TOOLTIP_OFFSET > container.clientWidth
+            ? svgX - cardW - TOOLTIP_OFFSET
+            : svgX + TOOLTIP_OFFSET;
         const containerY = TITLE_H + MARGIN.top + my;
         const top = Math.max(TITLE_H + 4, containerY - 60);
 
@@ -744,9 +742,9 @@ function drawTooltip(
       const svgX = MARGIN.left + xScale(row.period_index);
       const cardW = 180;
       const left =
-        svgX + cardW + 16 > container.clientWidth
-          ? svgX - cardW - 12
-          : svgX + 12;
+        svgX + cardW + TOOLTIP_OFFSET > container.clientWidth
+          ? svgX - cardW - TOOLTIP_OFFSET
+          : svgX + TOOLTIP_OFFSET;
 
       const containerY = TITLE_H + MARGIN.top + my;
       const tooltipH = 120;
@@ -793,7 +791,8 @@ function drawTooltip(
       nameEl.appendChild(nameLabel);
 
       const affixManifest = getAffixManifest();
-      const affixEntries = affixManifest[activeArc.season.id]?.[row.period] ?? [];
+      const affixEntries =
+        affixManifest[activeArc.season.id]?.[row.period] ?? [];
       const affixEl = document.createElement("div");
       affixEl.style.cssText = `font-size:${FONT.small}px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center`;
       if (affixEntries.length > 0) {
