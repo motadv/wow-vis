@@ -4,7 +4,7 @@ import { getWeeklyArc, getSecondaryAffixImpact } from "../db/queries.js";
 import { loadSeason, getAffixManifest } from "../db/init.js";
 import { getState, setState, subscribe } from "../state.js";
 import { dungeonColor } from "../utils/colors.js";
-import { computeAverageArc } from "../utils/arc-utils.js";
+import { computeAverageArc, collectAtWeek } from "../utils/arc-utils.js";
 import { MAX_SEASON } from "../config.js";
 import type { DungeonManifest, SeasonMeta, WeeklyArcRow, DungeonMeta } from "../types.js";
 import { FONT } from "../theme.js";
@@ -607,11 +607,13 @@ function drawTooltip(
     );
   }
 
-  const hoverCircle = g.append("circle")
-    .attr("r", 0)
-    .attr("fill", "white")
-    .attr("opacity", 0.9)
-    .style("pointer-events", "none");
+  const hoverCircles = arcs.map(() =>
+    g.append("circle")
+      .attr("r", 0)
+      .attr("fill", "white")
+      .attr("opacity", 0.9)
+      .style("pointer-events", "none")
+  );
 
   g.append("rect")
     .attr("width", width)
@@ -630,15 +632,114 @@ function drawTooltip(
         lastHoveredId = hovered.season.id;
         updatePathStyles(lastHoveredId);
       }
+
+      if (emphasizedSeasonId === null) {
+        // Multi-arc mode: combined tooltip for all seasons at the hovered week
+        const maxPeriods = Math.round(xScale.domain()[1]);
+        const periodIndex = Math.max(1, Math.min(Math.round(xScale.invert(mx)), maxPeriods));
+        const dataPoints = collectAtWeek(arcs, periodIndex);
+
+        hoverCircles.forEach((circle, i) => {
+          const row = arcs[i].rows.find((r) => r.period_index === periodIndex);
+          if (row) {
+            circle
+              .attr("cx", xScale(row.period_index))
+              .attr("cy", yScale(row.median_key))
+              .attr("r", 5);
+          } else {
+            circle.attr("r", 0);
+          }
+        });
+
+        if (dataPoints.length === 0) {
+          tooltipEl.style.display = "none";
+          return;
+        }
+
+        const svgX = MARGIN.left + xScale(periodIndex);
+        const cardW = 220;
+        const left =
+          svgX + cardW + 16 > container.clientWidth
+            ? svgX - cardW - 12
+            : svgX + 12;
+        const containerY = TITLE_H + MARGIN.top + my;
+        const top = Math.max(TITLE_H + 4, containerY - 60);
+
+        tooltipEl.style.display = "block";
+        tooltipEl.style.left = `${left}px`;
+        tooltipEl.style.top = `${top}px`;
+
+        const weekEl = document.createElement("div");
+        weekEl.style.cssText = `font-size:${FONT.small}px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#71717a;margin-bottom:6px`;
+        weekEl.textContent = `Week ${periodIndex}`;
+
+        const children: HTMLElement[] = [weekEl];
+        const affixManifest = getAffixManifest();
+
+        for (let i = 0; i < dataPoints.length; i++) {
+          if (i > 0) {
+            const sep = document.createElement("div");
+            sep.style.cssText = "border-top:1px solid #3f3f46;margin:6px 0";
+            children.push(sep);
+          }
+
+          const { arc, row } = dataPoints[i];
+          const arcColor = colors[arc.colorIndex % colors.length];
+          const affixEntries = affixManifest[arc.season.id]?.[row.period] ?? [];
+
+          const seasonEl = document.createElement("div");
+          seasonEl.style.cssText =
+            "display:flex;align-items:center;gap:5px;margin-bottom:2px";
+          const dot = document.createElement("span");
+          dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${arcColor};display:inline-block;flex-shrink:0`;
+          const seasonLabelEl = document.createElement("span");
+          seasonLabelEl.style.cssText = `font-size:${FONT.small}px;color:#a1a1aa;flex:1`;
+          seasonLabelEl.textContent = `S${arc.season.id}`;
+          const keySpan = document.createElement("span");
+          keySpan.style.cssText = `font-size:${FONT.small}px;font-weight:700;color:#e4e4e7`;
+          keySpan.textContent = `+${row.median_key.toFixed(1)}`;
+          seasonEl.appendChild(dot);
+          seasonEl.appendChild(seasonLabelEl);
+          seasonEl.appendChild(keySpan);
+
+          const affixEl = document.createElement("div");
+          affixEl.style.cssText = `font-size:${FONT.small}px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-left:13px`;
+          if (affixEntries.length > 0) {
+            for (const affix of affixEntries) {
+              const affixSpan = document.createElement("span");
+              affixSpan.style.cssText = `color:${getAffixColor(affix.id)};font-weight:500`;
+              affixSpan.textContent = affix.name;
+              affixEl.appendChild(affixSpan);
+            }
+          } else {
+            affixEl.textContent = "—";
+            affixEl.style.color = "#71717a";
+          }
+
+          children.push(seasonEl, affixEl);
+        }
+
+        tooltipEl.replaceChildren(...children);
+        return;
+      }
+
+      // Emphasized / single-arc mode — existing behavior
       const idx = bisect(activeArc.rows, xScale.invert(mx));
       const row =
         activeArc.rows[Math.max(0, Math.min(idx, activeArc.rows.length - 1))];
       if (!row) return;
 
-      hoverCircle
-        .attr("cx", xScale(row.period_index))
-        .attr("cy", yScale(row.median_key))
-        .attr("r", 5);
+      const activeArcIndex = arcs.indexOf(activeArc);
+      hoverCircles.forEach((circle, i) => {
+        if (i === activeArcIndex) {
+          circle
+            .attr("cx", xScale(row.period_index))
+            .attr("cy", yScale(row.median_key))
+            .attr("r", 5);
+        } else {
+          circle.attr("r", 0);
+        }
+      });
 
       const svgX = MARGIN.left + xScale(row.period_index);
       const cardW = 180;
@@ -659,7 +760,6 @@ function drawTooltip(
       weekEl.style.cssText = `font-size:${FONT.small}px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#71717a`;
       weekEl.textContent = `Week ${row.period_index}`;
 
-      // Calculate season median for color coding
       const seasonKeys = activeArc.rows
         .map((r) => r.median_key)
         .sort((a, b) => a - b);
@@ -674,12 +774,10 @@ function drawTooltip(
 
       const keyEl = document.createElement("div");
       keyEl.style.cssText = `font-size:${FONT.large}px;font-weight:700;display:flex;align-items:baseline;gap:6px`;
-
       const keySpan = document.createElement("span");
       keySpan.style.cssText = `color:${keyColor}`;
       keySpan.textContent = `+${row.median_key.toFixed(1)}`;
       keyEl.appendChild(keySpan);
-
       const medianSpan = document.createElement("span");
       medianSpan.style.cssText = `font-size:${FONT.small}px;color:#71717a;font-weight:400`;
       medianSpan.textContent = `(${seasonMedian.toFixed(1)})`;
@@ -687,26 +785,23 @@ function drawTooltip(
 
       const nameEl = document.createElement("div");
       nameEl.style.cssText = `font-size:${FONT.small}px;color:#a1a1aa;display:flex;align-items:center;gap:5px`;
-      const dot = document.createElement("span");
-      dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0`;
-      const label = document.createElement("span");
-      label.textContent = seasonLabel;
-      nameEl.appendChild(dot);
-      nameEl.appendChild(label);
+      const nameDot = document.createElement("span");
+      nameDot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0`;
+      const nameLabel = document.createElement("span");
+      nameLabel.textContent = seasonLabel;
+      nameEl.appendChild(nameDot);
+      nameEl.appendChild(nameLabel);
 
       const affixManifest = getAffixManifest();
-      const affixEntries =
-        affixManifest[activeArc.season.id]?.[row.period] ?? [];
-
+      const affixEntries = affixManifest[activeArc.season.id]?.[row.period] ?? [];
       const affixEl = document.createElement("div");
       affixEl.style.cssText = `font-size:${FONT.small}px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center`;
-
       if (affixEntries.length > 0) {
         for (const affix of affixEntries) {
           const affixSpan = document.createElement("span");
           const impactDelta = activeArc.secondaryAffixImpact.get(affix.id);
-          const color = getAffixColor(affix.id, impactDelta);
-          affixSpan.style.cssText = `color:${color};font-weight:500`;
+          const affixColor = getAffixColor(affix.id, impactDelta);
+          affixSpan.style.cssText = `color:${affixColor};font-weight:500`;
           affixSpan.textContent = affix.name;
           affixEl.appendChild(affixSpan);
         }
@@ -721,6 +816,6 @@ function drawTooltip(
       tooltipEl.style.display = "none";
       lastHoveredId = null;
       updatePathStyles(null);
-      hoverCircle.attr("r", 0);
+      hoverCircles.forEach((c) => c.attr("r", 0));
     });
 }
