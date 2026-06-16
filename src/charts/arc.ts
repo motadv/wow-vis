@@ -4,7 +4,7 @@ import { getWeeklyArc, getSecondaryAffixImpact } from "../db/queries.js";
 import { loadSeason, getAffixManifest } from "../db/init.js";
 import { getState, setState, subscribe } from "../state.js";
 import { dungeonColor } from "../utils/colors.js";
-import { computeAverageArc, collectAtWeek } from "../utils/arc-utils.js";
+import { computeAverageArc, collectAtWeek, computeSharedSeasons } from "../utils/arc-utils.js";
 import { MAX_SEASON, DISABLED_SEASONS } from "../config.js";
 import type {
   DungeonManifest,
@@ -58,6 +58,23 @@ export function initArc(
   let lastSelectionKey = "";
   let lastSingleData: ArcEntry[] = [];
   let lastMultiData = new Map<number, ArcEntry[]>();
+  let comparisonSeasonId: number | null = null;
+  const affixImpactCache = new Map<string, Map<number, { affixName: string; impactDelta: number }>>();
+
+  const onSelectSeason = (seasonId: number | null): void => {
+    comparisonSeasonId = seasonId;
+    const currentState = getState();
+    const selectedDungeons = currentState.selectedDungeons
+      .map(id => manifest.dungeons.find(d => d.id === id))
+      .filter((d): d is DungeonMeta => d !== undefined);
+    const sharedSeasons = computeSharedSeasons(
+      manifest.seasons,
+      currentState.selectedDungeons,
+      DISABLED_SEASONS,
+      MAX_SEASON,
+    );
+    renderMultiArc(container, selectedDungeons, lastMultiData, sharedSeasons, comparisonSeasonId, onSelectSeason, affixImpactCache);
+  };
 
   subscribe(async (state) => {
     if (state.selectedDungeons.length === 0) {
@@ -71,6 +88,7 @@ export function initArc(
       const selectionKey = [...state.selectedDungeons].sort().join(",");
 
       if (selectionKey !== lastSelectionKey) {
+        comparisonSeasonId = null;
         const newMultiData = new Map<number, ArcEntry[]>();
 
         for (const dungeonId of state.selectedDungeons) {
@@ -111,7 +129,13 @@ export function initArc(
         .map((id) => manifest.dungeons.find((d) => d.id === id))
         .filter((d): d is DungeonMeta => d !== undefined);
 
-      renderMultiArc(container, selectedDungeons, lastMultiData);
+      const sharedSeasons = computeSharedSeasons(
+        manifest.seasons,
+        state.selectedDungeons,
+        DISABLED_SEASONS,
+        MAX_SEASON,
+      );
+      renderMultiArc(container, selectedDungeons, lastMultiData, sharedSeasons, comparisonSeasonId, onSelectSeason, affixImpactCache);
       return;
     }
 
@@ -156,6 +180,7 @@ export function initArc(
 }
 
 const TITLE_H = 48;
+const CHIP_H = 36;
 
 function renderArc(
   container: HTMLElement,
@@ -222,10 +247,49 @@ function renderArc(
   );
 }
 
+function renderSeasonChips(
+  container: HTMLElement,
+  sharedSeasons: SeasonMeta[],
+  activeSeasonId: number | null,
+  onSelect: (id: number | null) => void | Promise<void>,
+): void {
+  const row = document.createElement("div");
+  row.style.cssText =
+    "padding:4px 16px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;";
+
+  const label = document.createElement("span");
+  label.style.cssText = `font-size:${FONT.small}px;color:#52525b;`;
+  label.textContent = "Compare in:";
+  row.appendChild(label);
+
+  for (const season of sharedSeasons) {
+    const isActive = season.id === activeSeasonId;
+    const chip = document.createElement("button");
+    chip.style.cssText = [
+      `font-size:${FONT.small}px`,
+      "font-family:sans-serif",
+      "cursor:pointer",
+      "border-radius:4px",
+      "padding:2px 8px",
+      isActive
+        ? "background:#3f3f46;border:1px solid #a1a1aa;color:#e4e4e7"
+        : "background:transparent;border:1px solid #3f3f46;color:#71717a",
+    ].join(";");
+    chip.textContent = `S${season.id}`;
+    chip.addEventListener("click", () => { void onSelect(isActive ? null : season.id); });
+    row.appendChild(chip);
+  }
+  container.appendChild(row);
+}
+
 function renderMultiArc(
   container: HTMLElement,
   dungeons: DungeonMeta[],
   dungeonData: Map<number, ArcEntry[]>,
+  sharedSeasons: SeasonMeta[],
+  comparisonSeasonId: number | null,
+  onSelectSeason: (id: number | null) => void | Promise<void>,
+  affixImpactCache: Map<string, Map<number, { affixName: string; impactDelta: number }>>,
 ): void {
   container.replaceChildren();
   container.style.position = "relative";
@@ -257,6 +321,15 @@ function renderMultiArc(
   }
   container.appendChild(legendEl);
 
+  if (sharedSeasons.length > 0) {
+    renderSeasonChips(container, sharedSeasons, comparisonSeasonId, onSelectSeason);
+  }
+
+  if (comparisonSeasonId !== null) {
+    void affixImpactCache;
+    return;
+  }
+
   const allSeasonRows: ArcEntry[] = [];
   for (const entries of dungeonData.values()) allSeasonRows.push(...entries);
   if (
@@ -266,10 +339,11 @@ function renderMultiArc(
     return;
 
   const LEGEND_H = 32;
+  const chipOffset = sharedSeasons.length > 0 ? CHIP_H : 0;
   const totalTitleH = TITLE_H + LEGEND_H;
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
   const height =
-    container.clientHeight - MARGIN.top - MARGIN.bottom - totalTitleH;
+    container.clientHeight - MARGIN.top - MARGIN.bottom - totalTitleH - chipOffset;
   const maxPeriods = Math.max(...allSeasonRows.map((e) => e.rows.length));
 
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
@@ -286,7 +360,7 @@ function renderMultiArc(
     .select(container)
     .append("svg")
     .attr("width", container.clientWidth)
-    .attr("height", container.clientHeight - totalTitleH)
+    .attr("height", container.clientHeight - totalTitleH - chipOffset)
     .style("font-family", "sans-serif");
 
   const g = svg
@@ -354,7 +428,7 @@ function renderMultiArc(
     yScale,
     width,
     height,
-    totalTitleH,
+    totalTitleH + chipOffset,
     container,
   );
 }
