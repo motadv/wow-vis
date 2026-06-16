@@ -262,3 +262,29 @@ export async function getPrimaryAffixTrend(
     ...data,
   }));
 }
+
+export async function getPrimaryAffixDeltaBySeason(
+  conn: AsyncDuckDBConnection,
+  dungeonId: number,
+  seasonIds: number[],
+): Promise<Array<{ seasonId: number; fortifiedDelta: number; tyrannicalDelta: number }>> {
+  return Promise.all(
+    seasonIds.map(async seasonId => {
+      const result = await conn.query(`
+        SELECT
+          MEDIAN(keystone_level)::FLOAT                                   AS baseline,
+          MEDIAN(CASE WHEN fortified     THEN keystone_level END)::FLOAT  AS fort_median,
+          MEDIAN(CASE WHEN NOT fortified THEN keystone_level END)::FLOAT  AS tyrant_median
+        FROM leaderboard_${seasonId}
+        WHERE dungeon_id = ${dungeonId}
+      `);
+      const row = result.toArray()[0];
+      const baseline = Number(row.baseline);
+      return {
+        seasonId,
+        fortifiedDelta:  Number(row.fort_median)   - baseline,
+        tyrannicalDelta: Number(row.tyrant_median) - baseline,
+      };
+    }),
+  );
+}
