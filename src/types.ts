@@ -99,8 +99,7 @@ export interface AffixAnalysisState {
 // Application state
 
 export interface AppState {
-  selectedDungeon?: number | null;
-  selectedDungeons: number[];         // multi-select for affix panel
+  selectedDungeons: number[];
   selectedSeasonForArc: number | null;  // which season's line is emphasized; null = all equal
   affixLens: 'trend' | 'snapshot' | 'headtohead';
   affixFilters: {
