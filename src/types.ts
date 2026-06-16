@@ -74,6 +74,21 @@ export interface PrimaryAffixTrendPoint {
   tyrannicalMedian: number;
 }
 
+export interface AffixMatrixRow {
+  affixId: number;
+  affixName: string;
+  isPrimary: boolean;
+  isFortified?: boolean;                    // set only on primary rows
+  cells: Record<number, number | null>;     // seasonId → delta (null = dungeon not in season)
+  avgDelta: number;                         // arithmetic mean across seasons with data
+}
+
+export interface AffixMatrixData {
+  dungeonId: number;
+  seasonIds: number[];    // seasons where dungeon appears, ascending, pre-S13 only
+  rows: AffixMatrixRow[]; // primary rows first, then secondary sorted by |avgDelta| desc
+}
+
 export interface AffixAnalysisState {
   selectedDungeonIds: number[];
   seasonId: number | null;
