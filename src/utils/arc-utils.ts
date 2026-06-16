@@ -1,5 +1,17 @@
 import type { WeeklyArcRow } from '../types.js';
 
+export function collectAtWeek<T extends { rows: WeeklyArcRow[] }>(
+  arcs: T[],
+  periodIndex: number,
+): Array<{ arc: T; row: WeeklyArcRow }> {
+  const results: Array<{ arc: T; row: WeeklyArcRow }> = [];
+  for (const arc of arcs) {
+    const row = arc.rows.find((r) => r.period_index === periodIndex);
+    if (row) results.push({ arc, row });
+  }
+  return results.sort((a, b) => b.row.median_key - a.row.median_key);
+}
+
 export interface AverageArcPoint {
   period_index: number;
   median_key: number;
