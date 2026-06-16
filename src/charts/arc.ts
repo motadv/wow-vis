@@ -33,7 +33,7 @@ function getAffixColor(affixId: number, impactDelta?: number): string {
   if (affixId === FORTIFIED_AFFIX_ID) return "#3b82f6";
   if (affixId === TYRANNICAL_AFFIX_ID) return "#f97316";
   if (impactDelta !== undefined) {
-    return cellStyle(impactDelta).text;
+    return cellStyle(impactDelta).bg;
   }
   return "#a1a1aa";
 }
@@ -295,6 +295,8 @@ function renderMultiArc(
 
   drawAxes(g, xScale, yScale, height, width);
 
+  const avgRowsMap = new Map<number, ArcPoint[]>();
+
   for (let i = 0; i < dungeons.length; i++) {
     const dungeon = dungeons[i];
     const color = dungeonColor(i);
@@ -312,6 +314,7 @@ function renderMultiArc(
     }
 
     const avgRows = computeAverageArc(entries.map((e) => e.rows));
+    avgRowsMap.set(dungeon.id, avgRows);
     if (avgRows.length === 0) continue;
 
     g.append("path")
@@ -342,6 +345,145 @@ function renderMultiArc(
       .style("pointer-events", "none")
       .text(dungeon.abbrev);
   }
+
+  drawMultiDungeonTooltip(
+    g,
+    dungeons,
+    avgRowsMap,
+    xScale,
+    yScale,
+    width,
+    height,
+    totalTitleH,
+    container,
+  );
+}
+
+function drawMultiDungeonTooltip(
+  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  dungeons: DungeonMeta[],
+  avgRowsMap: Map<number, { period_index: number; median_key: number }[]>,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  width: number,
+  height: number,
+  totalTitleH: number,
+  container: HTMLElement,
+): void {
+  const tooltipEl = document.createElement("div");
+  tooltipEl.style.cssText =
+    "position:absolute;background:#1c1c1f;border:1px solid #52525b;border-radius:6px;" +
+    `padding:10px 13px;font-size:${FONT.small}px;color:#e4e4e7;line-height:1.7;` +
+    "box-shadow:0 4px 16px rgba(0,0,0,0.5);pointer-events:none;display:none;" +
+    "font-family:sans-serif;white-space:nowrap";
+  container.appendChild(tooltipEl);
+
+  const hoverCircles = dungeons.map((_, i) =>
+    g
+      .append("circle")
+      .attr("r", 0)
+      .attr("fill", dungeonColor(i))
+      .attr("stroke", "white")
+      .attr("stroke-width", 1.5)
+      .attr("opacity", 0.9)
+      .style("pointer-events", "none"),
+  );
+
+  const maxPeriods = Math.round(xScale.domain()[1]);
+
+  g.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "none")
+    .style("pointer-events", "all")
+    .on("mousemove", (event: MouseEvent) => {
+      const [mx, my] = d3.pointer(event);
+      const periodIndex = Math.max(
+        1,
+        Math.min(Math.round(xScale.invert(mx)), maxPeriods),
+      );
+
+      const dataPoints = dungeons
+        .map((dungeon, i) => {
+          const rows = avgRowsMap.get(dungeon.id) ?? [];
+          const row = rows.find((r) => r.period_index === periodIndex);
+          return row ? { dungeon, color: dungeonColor(i), key: row.median_key, i } : null;
+        })
+        .filter((d): d is NonNullable<typeof d> => d !== null)
+        .sort((a, b) => b.key - a.key);
+
+      hoverCircles.forEach((circle, i) => {
+        const rows = avgRowsMap.get(dungeons[i].id) ?? [];
+        const row = rows.find((r) => r.period_index === periodIndex);
+        if (row) {
+          circle
+            .attr("cx", xScale(row.period_index))
+            .attr("cy", yScale(row.median_key))
+            .attr("r", 6);
+        } else {
+          circle.attr("r", 0);
+        }
+      });
+
+      if (dataPoints.length === 0) {
+        tooltipEl.style.display = "none";
+        return;
+      }
+
+      const svgX = MARGIN.left + xScale(periodIndex);
+      const cardW = 200;
+      const left =
+        svgX + cardW + TOOLTIP_OFFSET > container.clientWidth
+          ? svgX - cardW - TOOLTIP_OFFSET
+          : svgX + TOOLTIP_OFFSET;
+      const containerY = totalTitleH + MARGIN.top + my;
+      const top = Math.max(totalTitleH + 4, containerY - 60);
+
+      tooltipEl.style.display = "block";
+      tooltipEl.style.left = `${left}px`;
+      tooltipEl.style.top = `${top}px`;
+
+      const weekEl = document.createElement("div");
+      weekEl.style.cssText = `font-size:${FONT.small}px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#71717a;margin-bottom:6px`;
+      weekEl.textContent = `Week ${periodIndex}`;
+
+      const leader = dataPoints[0].key;
+      const children: HTMLElement[] = [weekEl];
+
+      const grid = document.createElement("div");
+      grid.style.cssText =
+        "display:grid;grid-template-columns:10px 1fr 54px 46px;align-items:center;row-gap:3px;column-gap:6px;";
+
+      for (const { dungeon, color, key } of dataPoints) {
+        const dot = document.createElement("span");
+        dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;justify-self:center`;
+
+        const nameEl = document.createElement("span");
+        nameEl.style.cssText = `font-size:${FONT.small}px;color:#a1a1aa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap`;
+        nameEl.textContent = dungeon.name;
+
+        const keyEl = document.createElement("span");
+        keyEl.style.cssText = `font-size:${FONT.small}px;font-weight:700;color:#e4e4e7;text-align:right`;
+        keyEl.textContent = `+${key.toFixed(2)}`;
+
+        const diffEl = document.createElement("span");
+        diffEl.style.cssText = `font-size:${FONT.small}px;color:#71717a;text-align:right`;
+        const diff = key - leader;
+        diffEl.textContent = diff < 0 ? diff.toFixed(2) : "";
+
+        grid.appendChild(dot);
+        grid.appendChild(nameEl);
+        grid.appendChild(keyEl);
+        grid.appendChild(diffEl);
+      }
+
+      children.push(grid);
+      tooltipEl.replaceChildren(...children);
+    })
+    .on("mouseleave", () => {
+      tooltipEl.style.display = "none";
+      hoverCircles.forEach((c) => c.attr("r", 0));
+    });
 }
 
 function drawAxes(
@@ -705,7 +847,8 @@ function drawTooltip(
           if (affixEntries.length > 0) {
             for (const affix of affixEntries) {
               const affixSpan = document.createElement("span");
-              affixSpan.style.cssText = `color:${getAffixColor(affix.id)};font-weight:500`;
+              const impactDelta = arc.secondaryAffixImpact.get(affix.id);
+              affixSpan.style.cssText = `color:${getAffixColor(affix.id, impactDelta)};font-weight:500`;
               affixSpan.textContent = affix.name;
               affixEl.appendChild(affixSpan);
             }
@@ -768,7 +911,7 @@ function drawTooltip(
             2
           : seasonKeys[Math.floor(seasonKeys.length / 2)];
       const delta = row.median_key - seasonMedian;
-      const keyColor = cellStyle(delta).text;
+      const keyColor = cellStyle(delta).bg;
 
       const keyEl = document.createElement("div");
       keyEl.style.cssText = `font-size:${FONT.large}px;font-weight:700;display:flex;align-items:baseline;gap:6px`;
