@@ -18,6 +18,7 @@ export const TYRANNICAL_AFFIX_ID = 9;
 export const FORTIFIED_AFFIX_ID = 10;
 export const TITLE_H = 48;
 export const CHIP_H = 36;
+export const LEGEND_H = 32;
 
 let keyDomain: [number, number] = [0, 40];
 

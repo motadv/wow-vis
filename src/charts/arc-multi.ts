@@ -8,6 +8,7 @@ import {
   TOOLTIP_OFFSET,
   TITLE_H,
   CHIP_H,
+  LEGEND_H,
   getKeyDomain,
   drawAxes,
   type ArcEntry,
@@ -56,22 +57,25 @@ export function renderMultiArc(
     renderSeasonChips(container, sharedSeasons, comparisonSeasonId, onSelectSeason);
   }
 
-  if (comparisonSeasonId !== null) {
-    renderComparisonView(container, dungeons, dungeonData, comparisonSeasonId, affixImpactCache);
-    return;
-  }
-
   const allSeasonRows: ArcEntry[] = [];
   for (const entries of dungeonData.values()) allSeasonRows.push(...entries);
   if (allSeasonRows.length === 0 || allSeasonRows.every((e) => e.rows.length === 0)) return;
 
-  const LEGEND_H = 32;
+  const sharedSeasonIdSet = new Set(sharedSeasons.map((s) => s.id));
+  const sharedRows = allSeasonRows.filter((e) => sharedSeasonIdSet.has(e.season.id));
+  const rowsForDomain = sharedRows.length > 0 ? sharedRows : allSeasonRows;
+  const maxPeriods = Math.max(...rowsForDomain.flatMap((e) => e.rows.map((r) => r.period_index)));
+
+  if (comparisonSeasonId !== null) {
+    renderComparisonView(container, dungeons, dungeonData, comparisonSeasonId, maxPeriods, affixImpactCache);
+    return;
+  }
+
   const chipOffset = sharedSeasons.length > 0 ? CHIP_H : 0;
   const totalTitleH = TITLE_H + LEGEND_H;
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
   const height =
     container.clientHeight - MARGIN.top - MARGIN.bottom - totalTitleH - chipOffset;
-  const maxPeriods = Math.max(...allSeasonRows.flatMap((e) => e.rows.map((r) => r.period_index)));
 
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
   const yScale = d3.scaleLinear().domain(getKeyDomain()).range([height, 0]);
@@ -101,9 +105,10 @@ export function renderMultiArc(
   for (let i = 0; i < dungeons.length; i++) {
     const dungeon = dungeons[i];
     const color = dungeonColor(i);
-    const entries = dungeonData.get(dungeon.id) ?? [];
+    const allEntries = dungeonData.get(dungeon.id) ?? [];
+    const sharedEntries = allEntries.filter((e) => sharedSeasonIdSet.has(e.season.id));
 
-    for (const { rows } of entries) {
+    for (const { rows } of sharedEntries) {
       if (rows.length === 0) continue;
       g.append("path")
         .datum(rows as ArcPoint[])
@@ -114,7 +119,7 @@ export function renderMultiArc(
         .attr("d", lineGen);
     }
 
-    const avgRows = computeAverageArc(entries.map((e) => e.rows));
+    const avgRows = computeAverageArc(allEntries.map((e) => e.rows));
     avgRowsMap.set(dungeon.id, avgRows);
     if (avgRows.length === 0) continue;
 

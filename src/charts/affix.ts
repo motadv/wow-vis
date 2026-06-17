@@ -3,7 +3,7 @@ import {
   getPrimaryAffixDeltaBySeason,
   getSecondaryAffixImpactAllSeasons,
 } from "../db/queries.js";
-import { subscribe, setState } from "../state.js";
+import { subscribe, setState, getState } from "../state.js";
 import { loadSeason } from "../db/init.js";
 import { dungeonColor } from "../utils/colors.js";
 import { renderAffixMatrix, buildAffixMatrixData } from "./affix-matrix.js";
@@ -18,20 +18,46 @@ export async function initAffixChart(
   const container = document.querySelector("#affix") as HTMLElement | null;
   if (!container) return;
 
-  let lastSelectionKey = "";
+  let lastSelectionKey = "uninitialized";
 
-  subscribe(async (state) => {
+  const render = async (state: import("../types.js").AppState) => {
     const selectionKey = [...state.selectedDungeons].sort().join(",");
     if (selectionKey === lastSelectionKey) return;
     lastSelectionKey = selectionKey;
 
-    container.replaceChildren();
-
     if (state.selectedDungeons.length === 0) {
-      const div = document.createElement("div");
-      div.style.cssText = "color:#999;text-align:center;padding:12px;";
-      div.textContent = "Select a dungeon to analyze affixes.";
-      container.appendChild(div);
+      const allSeasons = manifest.seasons
+        .filter((s) => s.id <= MAX_SEASON && !DISABLED_SEASONS.has(s.id))
+        .map((s) => s.id)
+        .sort((a, b) => a - b);
+
+      await Promise.all(allSeasons.map((id) => loadSeason(id)));
+
+      if ([...getState().selectedDungeons].sort().join(",") !== selectionKey) return;
+
+      const [primaryDeltas, secondaryData] = await Promise.all([
+        getPrimaryAffixDeltaBySeason(conn, null, allSeasons),
+        getSecondaryAffixImpactAllSeasons(conn, null, allSeasons),
+      ]);
+
+      const matrixData = buildAffixMatrixData(null, allSeasons, primaryDeltas, secondaryData);
+
+      container.replaceChildren();
+
+      const block = document.createElement("div");
+      const title = document.createElement("div");
+      title.style.cssText = `padding:16px;font-size:${FONT.large}px;font-weight:bold;color:#e4e4e7;border-bottom:1px solid #27272a;`;
+      title.textContent = "All Dungeons — Affix Impact";
+      block.appendChild(title);
+
+      const matrixContainer = document.createElement("div");
+      matrixContainer.style.cssText = "padding:12px;overflow-x:auto;";
+      block.appendChild(matrixContainer);
+      container.appendChild(block);
+
+      renderAffixMatrix(matrixContainer, matrixData, (seasonId) => {
+        setState({ selectedSeasonForArc: seasonId });
+      });
       return;
     }
 
@@ -40,7 +66,6 @@ export async function initAffixChart(
     if (isMulti) {
       rowEl.style.cssText =
         "display:flex;flex-direction:row;flex-wrap:wrap;gap:16px;padding:8px 0;";
-      container.appendChild(rowEl);
     }
 
     // Build all matrix data first so we can compute a global affix order for multi-dungeon mode
@@ -102,6 +127,11 @@ export async function initAffixChart(
         });
       }
     }
+
+    if ([...getState().selectedDungeons].sort().join(",") !== selectionKey) return;
+
+    container.replaceChildren();
+    if (isMulti) container.appendChild(rowEl);
 
     // Collect union of all secondary affixes across all matrices
     const allSecondaryAffixes = new Map<number, string>();
@@ -193,5 +223,8 @@ export async function initAffixChart(
         globalAffixOrder,
       );
     }
-  });
+  };
+
+  subscribe(render);
+  await render(getState());
 }

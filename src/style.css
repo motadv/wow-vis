@@ -137,14 +137,10 @@ html, body {
 }
 
 .lane-label {
-  display: grid;
-  grid-template-columns: 28px 52px;
-  gap: 6px;
-  align-items: center;
-  justify-items: center;
   font-size: var(--font-small);
   color: #71717a;
-  width: 86px;
+  width: 28px;
+  text-align: center;
   flex-shrink: 0;
 }
 

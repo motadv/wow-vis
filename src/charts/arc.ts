@@ -147,7 +147,8 @@ export function initArc(
         }),
       );
 
-      if (getState().selectedDungeons[0] !== dungeonId) return;
+      const currentAfterFetch = getState().selectedDungeons;
+      if (currentAfterFetch.length !== 1 || currentAfterFetch[0] !== dungeonId) return;
       lastSelectionKey = selectionKey;
       lastMultiData.clear();
     }

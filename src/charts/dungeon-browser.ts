@@ -2,11 +2,35 @@ import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import { ERA_PALETTE, ERA_LABELS, ERAS_IN_ORDER, MAX_SEASON, DISABLED_SEASONS } from '../config.js';
 import { getSeasonRankMatrix } from '../db/queries.js';
 import { loadSeason } from '../db/init.js';
-import { computeRanks } from '../utils/ranks.js';
 import { expansionName } from '../utils/seasons.js';
 import { subscribe, getState, toggleDungeonSelection } from '../state.js';
-import { matchesDungeonSearch } from '../utils/dungeon-search.js';
 import type { DungeonManifest, RankMatrixRow, SeasonMeta } from '../types.js';
+
+export function matchesDungeonSearch(name: string, query: string): boolean {
+  return name.toLowerCase().includes(query.toLowerCase());
+}
+
+export interface RankedMatrixRow extends RankMatrixRow {
+  rank: number;
+  total: number;
+}
+
+export function computeRanks(rows: RankMatrixRow[]): RankedMatrixRow[] {
+  const bySeason = new Map<number, RankMatrixRow[]>();
+  for (const row of rows) {
+    const arr = bySeason.get(row.season_id) ?? [];
+    arr.push(row);
+    bySeason.set(row.season_id, arr);
+  }
+
+  const result: RankedMatrixRow[] = [];
+  for (const seasonRows of bySeason.values()) {
+    const sorted = [...seasonRows].sort((a, b) => b.median_key - a.median_key);
+    const total = sorted.length;
+    sorted.forEach((row, i) => result.push({ ...row, rank: i + 1, total }));
+  }
+  return result;
+}
 
 function handleTileClick(dungeonId: number, event: MouseEvent): void {
   event.stopPropagation();
@@ -102,23 +126,6 @@ export async function initDungeonBrowser(
       labelEl.className = 'lane-label';
       labelEl.textContent = `S${season.id}`;
 
-      // Add F/T split bars
-      const splitContainer = document.createElement('div');
-      splitContainer.style.cssText = 'display:flex;gap:2px;align-items:center;width:52px;height:24px;flex-shrink:0;';
-
-      // Fortified bar (blue)
-      const fortBar = document.createElement('div');
-      fortBar.style.cssText = 'flex:0.55;background:#3b82f6;height:100%;border-radius:2px;';
-      fortBar.title = 'Fortified';
-      splitContainer.appendChild(fortBar);
-
-      // Tyrannical bar (orange)
-      const tyrBar = document.createElement('div');
-      tyrBar.style.cssText = 'flex:0.45;background:#f97316;height:100%;border-radius:2px;';
-      tyrBar.title = 'Tyrannical';
-      splitContainer.appendChild(tyrBar);
-
-      labelEl.appendChild(splitContainer);
       lane.appendChild(labelEl);
 
       const tilesEl = document.createElement('div');

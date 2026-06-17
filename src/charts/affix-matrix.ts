@@ -57,7 +57,7 @@ export function cellStyle(delta: number | null): { bg: string; text: string } {
 }
 
 export function buildAffixMatrixData(
-  dungeonId: number,
+  dungeonId: number | null,
   seasonIds: number[],
   primaryDeltas: Array<{
     seasonId: number;
@@ -200,8 +200,13 @@ export function renderAffixMatrix(
         `background:${isActive ? "rgba(59,130,246,0.15)" : "transparent"}`,
       ].join(";");
       th.onclick = () => {
-        selectedCol = seasonId;
-        onSeasonSelect(seasonId);
+        if (selectedCol === seasonId) {
+          selectedCol = "avg";
+          onSeasonSelect(null);
+        } else {
+          selectedCol = seasonId;
+          onSeasonSelect(seasonId);
+        }
         render();
       };
       hRow.appendChild(th);

@@ -55,7 +55,7 @@ export async function getWeeklyArc(
 
 export async function getSecondaryAffixImpact(
   conn: AsyncDuckDBConnection,
-  dungeonId: number,
+  dungeonId: number | null,
   seasonId: number,
   periodIds?: number[],
 ): Promise<Array<{ affixId: number; affixName: string; impactDelta: number }>> {
@@ -64,10 +64,12 @@ export async function getSecondaryAffixImpact(
 
   if (allPeriods.length === 0) return [];
 
+  const dungeonFilter = dungeonId !== null ? `dungeon_id = ${dungeonId} AND ` : '';
+
   const baselineQuery = `
     SELECT MEDIAN(keystone_level) as baseline
     FROM leaderboard_${seasonId}
-    WHERE dungeon_id = ${dungeonId} AND period IN (${allPeriods.join(',')})
+    WHERE ${dungeonFilter}period IN (${allPeriods.join(',')})
   `;
   const baselineResult = await conn.query(baselineQuery);
   const baseline = (baselineResult.toArray()[0]?.baseline as number) || 0;
@@ -96,7 +98,7 @@ export async function getSecondaryAffixImpact(
     const withAffixQuery = `
       SELECT MEDIAN(keystone_level) as median_key
       FROM leaderboard_${seasonId}
-      WHERE dungeon_id = ${dungeonId} AND period IN (${affixPeriods.join(',')})
+      WHERE ${dungeonFilter}period IN (${affixPeriods.join(',')})
     `;
     const withAffixResult = await conn.query(withAffixQuery);
     const withAffixMedian = (withAffixResult.toArray()[0]?.median_key as number) || 0;
@@ -110,7 +112,7 @@ export async function getSecondaryAffixImpact(
 
 export async function getSecondaryAffixImpactAllSeasons(
   conn: AsyncDuckDBConnection,
-  dungeonId: number,
+  dungeonId: number | null,
   seasonIds: number[],
 ): Promise<Array<{ affixId: number; affixName: string; cells: Record<number, number>; avgDelta: number }>> {
   const perSeason = await Promise.all(
@@ -139,9 +141,10 @@ export async function getSecondaryAffixImpactAllSeasons(
 
 export async function getPrimaryAffixDeltaBySeason(
   conn: AsyncDuckDBConnection,
-  dungeonId: number,
+  dungeonId: number | null,
   seasonIds: number[],
 ): Promise<Array<{ seasonId: number; fortifiedDelta: number; tyrannicalDelta: number }>> {
+  const whereClause = dungeonId !== null ? `WHERE dungeon_id = ${dungeonId}` : '';
   return Promise.all(
     seasonIds.map(async seasonId => {
       const result = await conn.query(`
@@ -150,7 +153,7 @@ export async function getPrimaryAffixDeltaBySeason(
           MEDIAN(CASE WHEN fortified     THEN keystone_level END)::FLOAT  AS fort_median,
           MEDIAN(CASE WHEN NOT fortified THEN keystone_level END)::FLOAT  AS tyrant_median
         FROM leaderboard_${seasonId}
-        WHERE dungeon_id = ${dungeonId}
+        ${whereClause}
       `);
       const row = result.toArray()[0];
       const baseline = Number(row.baseline);

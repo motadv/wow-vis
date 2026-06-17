@@ -3,13 +3,13 @@ import { getAffixManifest } from "../db/init.js";
 import { FONT } from "../theme.js";
 import type { DungeonMeta, WeeklyArcRow } from "../types.js";
 import { dungeonColor } from "../utils/colors.js";
-import { computeWeekLeaders } from "../utils/arc-utils.js";
 import { cellStyle } from "./affix-matrix.js";
 import {
   MARGIN,
   TOOLTIP_OFFSET,
   TITLE_H,
   CHIP_H,
+  LEGEND_H,
   TYRANNICAL_AFFIX_ID,
   FORTIFIED_AFFIX_ID,
   getKeyDomain,
@@ -23,6 +23,7 @@ export function renderComparisonView(
   dungeons: DungeonMeta[],
   dungeonData: Map<number, ArcEntry[]>,
   comparisonSeasonId: number,
+  maxPeriods: number,
   affixImpactCache: Map<string, Map<number, { affixName: string; impactDelta: number }>>,
 ): void {
   const rowsByDungeon = new Map<number, WeeklyArcRow[]>();
@@ -34,16 +35,11 @@ export function renderComparisonView(
   }
   if (rowsByDungeon.size === 0) return;
 
-  const allRows = Array.from(rowsByDungeon.values()).flat();
-  const maxPeriods = Math.max(...allRows.map(r => r.period_index));
-  const RIBBON_H = 8;
-
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
-  const height = container.clientHeight - MARGIN.top - MARGIN.bottom - TITLE_H - CHIP_H;
-  const chartHeight = height - RIBBON_H;
+  const height = container.clientHeight - MARGIN.top - MARGIN.bottom - TITLE_H - LEGEND_H - CHIP_H;
 
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
-  const yScale = d3.scaleLinear().domain(getKeyDomain()).range([chartHeight, 0]);
+  const yScale = d3.scaleLinear().domain(getKeyDomain()).range([height, 0]);
 
   const lineGen = d3
     .line<WeeklyArcRow>()
@@ -51,7 +47,7 @@ export function renderComparisonView(
     .y(r => yScale(r.median_key))
     .curve(d3.curveMonotoneX);
 
-  const svgHeight = container.clientHeight - TITLE_H - CHIP_H;
+  const svgHeight = container.clientHeight - TITLE_H - LEGEND_H - CHIP_H;
   const svg = d3
     .select(container)
     .append("svg")
@@ -63,7 +59,7 @@ export function renderComparisonView(
     .append("g")
     .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
 
-  drawAxes(g, xScale, yScale, chartHeight, width);
+  drawAxes(g, xScale, yScale, height, width);
 
   for (let i = 0; i < dungeons.length; i++) {
     const dungeon = dungeons[i];
@@ -89,7 +85,6 @@ export function renderComparisonView(
     }
   }
 
-  drawLeaderRibbon(g, dungeons, rowsByDungeon, xScale, chartHeight, RIBBON_H);
   drawComparisonTooltip(
     g,
     dungeons,
@@ -97,7 +92,7 @@ export function renderComparisonView(
     xScale,
     yScale,
     width,
-    chartHeight,
+    height,
     TITLE_H + CHIP_H,
     container,
     comparisonSeasonId,
@@ -105,40 +100,6 @@ export function renderComparisonView(
   );
 }
 
-function drawLeaderRibbon(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  dungeons: DungeonMeta[],
-  rowsByDungeon: Map<number, WeeklyArcRow[]>,
-  xScale: d3.ScaleLinear<number, number>,
-  yOffset: number,
-  ribbonHeight: number,
-): void {
-  const leaders = computeWeekLeaders(
-    dungeons,
-    rowsByDungeon as Map<number, ReadonlyArray<{ period_index: number; median_key: number }>>,
-  );
-  if (leaders.size === 0) return;
-
-  const domain = xScale.domain();
-  const maxPeriods = Math.round(domain[1]);
-  const halfStep = maxPeriods > 1 ? (xScale(2) - xScale(1)) / 2 : xScale(1) / 2;
-
-  const ribbonG = g.append("g").attr("transform", `translate(0,${yOffset})`);
-
-  for (const [period, leaderId] of leaders.entries()) {
-    const dungeonIdx = dungeons.findIndex(d => d.id === leaderId);
-    const color = dungeonIdx >= 0 ? dungeonColor(dungeonIdx) : "#3f3f46";
-    ribbonG
-      .append("rect")
-      .attr("x", xScale(period) - halfStep)
-      .attr("y", 0)
-      .attr("width", halfStep * 2)
-      .attr("height", ribbonHeight)
-      .attr("fill", color)
-      .attr("opacity", 0.85)
-      .style("pointer-events", "none");
-  }
-}
 
 function drawComparisonTooltip(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,

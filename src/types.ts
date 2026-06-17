@@ -79,7 +79,7 @@ export interface AffixMatrixRow {
 }
 
 export interface AffixMatrixData {
-  dungeonId: number;
+  dungeonId: number | null;
   seasonIds: number[];    // seasons where dungeon appears, ascending, pre-S13 only
   rows: AffixMatrixRow[]; // primary rows first, then secondary sorted by |avgDelta| desc
 }
