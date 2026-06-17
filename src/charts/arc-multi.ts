@@ -15,6 +15,10 @@ import {
 } from "./arc-shared.js";
 import { renderComparisonView } from "./arc-comparison.js";
 
+// Renderiza o Arc Chart no modo multi dungeon.
+// Quando comparisonSeasonId é null: exibe linha agregada (média de seasons) por dungeon
+// com linhas individuais em baixa opacidade como contexto.
+// Quando comparisonSeasonId está definido: delega para renderComparisonView (§3.2).
 export function renderMultiArc(
   container: HTMLElement,
   dungeons: DungeonMeta[],
@@ -63,20 +67,26 @@ export function renderMultiArc(
 
   const sharedSeasonIdSet = new Set(sharedSeasons.map((s) => s.id));
   const sharedRows = allSeasonRows.filter((e) => sharedSeasonIdSet.has(e.season.id));
-  const rowsForDomain = sharedRows.length > 0 ? sharedRows : allSeasonRows;
-  const maxPeriods = Math.max(...rowsForDomain.flatMap((e) => e.rows.map((r) => r.period_index)));
+  const maxPeriods = Math.max(...allSeasonRows.flatMap((e) => e.rows.map((r) => r.period_index)));
+  // maxPeriodsComparison: limita o eixo X às seasons compartilhadas quando existe
+  // uma season de comparação, evitando espaço vazio à direita do gráfico.
+  const maxPeriodsComparison = sharedRows.length > 0
+    ? Math.max(...sharedRows.flatMap((e) => e.rows.map((r) => r.period_index)))
+    : maxPeriods;
 
   if (comparisonSeasonId !== null) {
-    renderComparisonView(container, dungeons, dungeonData, comparisonSeasonId, maxPeriods, affixImpactCache);
+    renderComparisonView(container, dungeons, dungeonData, comparisonSeasonId, maxPeriodsComparison, affixImpactCache);
     return;
   }
 
+  // chipOffset: espaço extra para os botões de season (chips) quando existem seasons compartilhadas.
   const chipOffset = sharedSeasons.length > 0 ? CHIP_H : 0;
   const totalTitleH = TITLE_H + LEGEND_H;
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
   const height =
     container.clientHeight - MARGIN.top - MARGIN.bottom - totalTitleH - chipOffset;
 
+  // Mesmas escalas do modo single: domínio global fixo no Y para comparabilidade (§4.4).
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
   const yScale = d3.scaleLinear().domain(getKeyDomain()).range([height, 0]);
 
@@ -108,6 +118,8 @@ export function renderMultiArc(
     const allEntries = dungeonData.get(dungeon.id) ?? [];
     const sharedEntries = allEntries.filter((e) => sharedSeasonIdSet.has(e.season.id));
 
+    // Linhas individuais por season em baixa opacidade — contexto visual para
+    // mostrar que a linha agregada é uma média, não uma season específica.
     for (const { rows } of sharedEntries) {
       if (rows.length === 0) continue;
       g.append("path")
@@ -119,6 +131,8 @@ export function renderMultiArc(
         .attr("d", lineGen);
     }
 
+    // Linha agregada: média das medianas semanais por período_index entre todas as seasons.
+    // Representada com stroke-width maior e opacidade 1 para hierarquizar como série principal.
     const avgRows = computeAverageArc(allEntries.map((e) => e.rows));
     avgRowsMap.set(dungeon.id, avgRows);
     if (avgRows.length === 0) continue;
@@ -165,6 +179,8 @@ export function renderMultiArc(
   );
 }
 
+// Renderiza os botões de seleção de season (chips) quando múltiplas dungeons
+// têm seasons em comum — ativa o modo de comparação por temporada (T3, §3.2).
 function renderSeasonChips(
   container: HTMLElement,
   sharedSeasons: SeasonMeta[],

@@ -15,15 +15,23 @@ import {
   type ArcEntry,
 } from "./arc-shared.js";
 
+// Renderiza o Arc Chart no modo single dungeon (ou agregado "All Dungeons").
+// Cada chamada reconstrói o SVG do zero via replaceChildren() — D3 não usa update
+// pattern aqui porque as mudanças de estado implicam conjuntos de linhas completamente
+// diferentes (nova dungeon = novas seasons = novos dados).
 export function renderArc(
   container: HTMLElement,
   title: string,
   arcs: ArcEntry[],
   emphasizedSeasonId: number | null,
+  showAffixes = true,
 ): void {
+  // replaceChildren() limpa o container antes de re-renderizar, evitando SVGs duplicados.
   container.replaceChildren();
   if (arcs.length === 0 || arcs.every((a) => a.rows.length === 0)) return;
 
+  // position:relative necessário para que o tooltip (position:absolute) se posicione
+  // em relação ao container e não ao viewport.
   container.style.position = "relative";
 
   const titleEl = document.createElement("div");
@@ -38,13 +46,20 @@ export function renderArc(
   container.appendChild(titleEl);
 
   const colors = d3.schemeTableau10 as readonly string[];
+  // Dimensões do SVG: descontam margens e altura do título para que os eixos
+  // fiquem corretamente alinhados ao container visível.
   const width = container.clientWidth - MARGIN.left - MARGIN.right;
   const height = container.clientHeight - MARGIN.top - MARGIN.bottom - TITLE_H;
   const maxPeriods = Math.max(...arcs.flatMap((a) => a.rows.map((r) => r.period_index)));
 
+  // xScale: período relativo (1..maxPeriods) → pixels. Permite comparar seasons de
+  // durações diferentes no mesmo espaço horizontal (§4.4 do relatório).
   const xScale = d3.scaleLinear().domain([1, maxPeriods]).range([0, width]);
+  // yScale: domínio global fixo (getKeyDomain()) → pixels invertidos (SVG cresce para baixo).
   const yScale = d3.scaleLinear().domain(getKeyDomain()).range([height, 0]);
 
+  // curveMonotoneX suaviza a linha preservando monotonia local — evita artefatos
+  // de interpolação que criariam picos falsos entre pontos.
   const line = d3
     .line<WeeklyArcRow>()
     .x((r) => xScale(r.period_index))
@@ -58,6 +73,8 @@ export function renderArc(
     .attr("height", container.clientHeight - TITLE_H)
     .style("font-family", "sans-serif");
 
+  // Grupo <g> com translate(margin) centraliza a área de dados dentro do SVG,
+  // deixando espaço para os rótulos dos eixos.
   const g = svg
     .append("g")
     .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
@@ -67,9 +84,12 @@ export function renderArc(
   if (emphasizedSeasonId !== null) {
     drawMedianReference(g, arcs, yScale, width, emphasizedSeasonId);
   }
-  drawTooltip(g, arcs, xScale, yScale, width, height, emphasizedSeasonId, colors, container);
+  drawTooltip(g, arcs, xScale, yScale, width, height, emphasizedSeasonId, colors, container, showAffixes);
 }
 
+// Desenha uma linha SVG por season, com círculos em cada ponto de dado e
+// uma linha vertical pontilhada ao final da season.
+// Seasons não em destaque ficam com opacidade 0.3 para hierarquizar visualmente (§3.2).
 function drawLines(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
   arcs: ArcEntry[],
@@ -86,6 +106,7 @@ function drawLines(
       emphasizedSeasonId === null || season.id === emphasizedSeasonId;
     const color = colors[colorIndex % colors.length];
 
+    // data-season-id permite que updatePathStyles() localize este path por season.
     g.append("path")
       .datum(rows)
       .attr("data-season-id", String(season.id))
@@ -151,6 +172,9 @@ function drawLines(
   }
 }
 
+// Linha de referência horizontal: mediana das medianas semanais da season em destaque.
+// Calculada como mediana (não média) para manter coerência estatística com o restante
+// do sistema. Exibida apenas quando uma season está selecionada (§3.2 do relatório).
 function drawMedianReference(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
   arcs: ArcEntry[],
@@ -189,7 +213,10 @@ function drawTooltip(
   emphasizedSeasonId: number | null,
   colors: readonly string[],
   container: HTMLElement,
+  showAffixes: boolean,
 ): void {
+  // activeArc: season que recebe a tooltip no modo com season em destaque.
+  // Se nenhuma está em destaque, usa a season com mais semanas (para bisect robusto).
   const activeArc =
     emphasizedSeasonId !== null
       ? (arcs.find((a) => a.season.id === emphasizedSeasonId) ??
@@ -200,6 +227,7 @@ function drawTooltip(
 
   const color = colors[activeArc.colorIndex % colors.length];
   const seasonLabel = `S${activeArc.season.id}`;
+  // bisect.center localiza o ponto de dados mais próximo ao cursor no eixo X.
   const bisect = d3.bisector<WeeklyArcRow, number>((r) => r.period_index).center;
 
   const tooltipEl = document.createElement("div");
@@ -229,6 +257,8 @@ function drawTooltip(
     return nearest;
   }
 
+  // Atualiza stroke-width e opacidade de todos os paths ao hover — D3 selection
+  // via atributo data-season-id evita ter que manter referências para cada path.
   function updatePathStyles(hoveredSeasonId: number | null): void {
     g.selectAll<SVGPathElement, unknown>("path[data-season-id]").each(
       function () {
@@ -264,6 +294,9 @@ function drawTooltip(
       .style("pointer-events", "none"),
   );
 
+  // Rect transparente sobre toda a área de dados captura eventos de mouse.
+  // fill:none + pointer-events:all é o padrão D3 para overlay de interação sem
+  // bloquear visualmente o conteúdo abaixo.
   g.append("rect")
     .attr("width", width)
     .attr("height", height)
@@ -273,6 +306,8 @@ function drawTooltip(
     .on("click", (event: MouseEvent) => {
       const [mx, my] = d3.pointer(event);
       const clicked = nearestArc(mx, my).season.id;
+      // Clique na season já em destaque desfaz a seleção (toggle) — propaga
+      // selectedSeasonForArc=null para o Affix Chart via estado global.
       setState({
         selectedSeasonForArc: clicked === emphasizedSeasonId ? null : clicked,
       });
@@ -328,7 +363,7 @@ function drawTooltip(
         weekEl.textContent = `Week ${periodIndex}`;
 
         const children: HTMLElement[] = [weekEl];
-        const affixManifest = getAffixManifest();
+        const affixManifest = showAffixes ? getAffixManifest() : null;
 
         for (let i = 0; i < dataPoints.length; i++) {
           if (i > 0) {
@@ -339,7 +374,6 @@ function drawTooltip(
 
           const { arc, row } = dataPoints[i];
           const arcColor = colors[arc.colorIndex % colors.length];
-          const affixEntries = affixManifest[arc.season.id]?.[row.period] ?? [];
 
           const seasonEl = document.createElement("div");
           seasonEl.style.cssText =
@@ -356,22 +390,26 @@ function drawTooltip(
           seasonEl.appendChild(seasonLabelEl);
           seasonEl.appendChild(keySpan);
 
-          const affixEl = document.createElement("div");
-          affixEl.style.cssText = `font-size:${FONT.small}px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-left:13px`;
-          if (affixEntries.length > 0) {
-            for (const affix of affixEntries) {
-              const affixSpan = document.createElement("span");
-              const impactDelta = arc.secondaryAffixImpact.get(affix.id);
-              affixSpan.style.cssText = `color:${getAffixColor(affix.id, impactDelta)};font-weight:500`;
-              affixSpan.textContent = affix.name;
-              affixEl.appendChild(affixSpan);
-            }
-          } else {
-            affixEl.textContent = "—";
-            affixEl.style.color = "#71717a";
-          }
+          children.push(seasonEl);
 
-          children.push(seasonEl, affixEl);
+          if (affixManifest) {
+            const affixEntries = affixManifest[arc.season.id]?.[row.period] ?? [];
+            const affixEl = document.createElement("div");
+            affixEl.style.cssText = `font-size:${FONT.small}px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-left:13px`;
+            if (affixEntries.length > 0) {
+              for (const affix of affixEntries) {
+                const affixSpan = document.createElement("span");
+                const impactDelta = arc.secondaryAffixImpact.get(affix.id);
+                affixSpan.style.cssText = `color:${getAffixColor(affix.id, impactDelta)};font-weight:500`;
+                affixSpan.textContent = affix.name;
+                affixEl.appendChild(affixSpan);
+              }
+            } else {
+              affixEl.textContent = "—";
+              affixEl.style.color = "#71717a";
+            }
+            children.push(affixEl);
+          }
         }
 
         tooltipEl.replaceChildren(...children);
@@ -447,25 +485,30 @@ function drawTooltip(
       nameEl.appendChild(nameDot);
       nameEl.appendChild(nameLabel);
 
-      const affixManifest = getAffixManifest();
-      const affixEntries = affixManifest[activeArc.season.id]?.[row.period] ?? [];
-      const affixEl = document.createElement("div");
-      affixEl.style.cssText = `font-size:${FONT.small}px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center`;
-      if (affixEntries.length > 0) {
-        for (const affix of affixEntries) {
-          const affixSpan = document.createElement("span");
-          const impactDelta = activeArc.secondaryAffixImpact.get(affix.id);
-          const affixColor = getAffixColor(affix.id, impactDelta);
-          affixSpan.style.cssText = `color:${affixColor};font-weight:500`;
-          affixSpan.textContent = affix.name;
-          affixEl.appendChild(affixSpan);
+      const tooltipChildren: HTMLElement[] = [weekEl, keyEl, nameEl];
+
+      if (showAffixes) {
+        const affixManifest = getAffixManifest();
+        const affixEntries = affixManifest[activeArc.season.id]?.[row.period] ?? [];
+        const affixEl = document.createElement("div");
+        affixEl.style.cssText = `font-size:${FONT.small}px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center`;
+        if (affixEntries.length > 0) {
+          for (const affix of affixEntries) {
+            const affixSpan = document.createElement("span");
+            const impactDelta = activeArc.secondaryAffixImpact.get(affix.id);
+            const affixColor = getAffixColor(affix.id, impactDelta);
+            affixSpan.style.cssText = `color:${affixColor};font-weight:500`;
+            affixSpan.textContent = affix.name;
+            affixEl.appendChild(affixSpan);
+          }
+        } else {
+          affixEl.textContent = "—";
+          affixEl.style.color = "#71717a";
         }
-      } else {
-        affixEl.textContent = "—";
-        affixEl.style.color = "#71717a";
+        tooltipChildren.push(affixEl);
       }
 
-      tooltipEl.replaceChildren(weekEl, keyEl, nameEl, affixEl);
+      tooltipEl.replaceChildren(...tooltipChildren);
     })
     .on("mouseleave", () => {
       tooltipEl.style.display = "none";

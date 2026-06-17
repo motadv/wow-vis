@@ -1,8 +1,7 @@
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
-import { getWeeklyArc, getSecondaryAffixImpact } from "../db/queries.js";
+import { getWeeklyArc, getWeeklyArcAllDungeons, getSecondaryAffixImpact } from "../db/queries.js";
 import { loadSeason } from "../db/init.js";
 import { getState, subscribe } from "../state.js";
-import { FONT } from "../theme.js";
 import { computeSharedSeasons } from "../utils/arc-utils.js";
 import { MAX_SEASON, DISABLED_SEASONS } from "../config.js";
 import type { DungeonManifest, DungeonMeta } from "../types.js";
@@ -12,23 +11,29 @@ import { renderMultiArc } from "./arc-multi.js";
 
 export { setKeyDomain };
 
-export function initArc(
+export async function initArc(
   container: HTMLElement,
   manifest: DungeonManifest,
   conn: AsyncDuckDBConnection,
-): void {
-  const emptyMsg = document.createElement("p");
-  emptyMsg.style.cssText = `margin:0;padding:16px;font-size:${FONT.small}px;color:#71717a;text-align:center`;
-  emptyMsg.textContent =
-    "Select a dungeon on the map or heatmap to see its weekly progression.";
-  container.appendChild(emptyMsg);
-
+): Promise<void> {
+  // lastSelectionKey memoiza o estado de seleção: se a chave não mudou,
+  // evita re-fetch e re-render desnecessários (§4.3 do relatório).
   let lastSelectionKey = "";
   let lastSingleData: ArcEntry[] = [];
   let lastMultiData = new Map<number, ArcEntry[]>();
+  // comparisonSeasonId controla qual season está em destaque no modo multi dungeon.
+  // É local ao Arc Chart e não entra no estado global porque é uma interação interna.
   let comparisonSeasonId: number | null = null;
+  // Cache de impacto de afixos secundários por (dungeonId:seasonId) para evitar
+  // recalcular ao trocar de season no modo comparação.
   const affixImpactCache = new Map<string, Map<number, { affixName: string; impactDelta: number }>>();
+  // Cache do estado "sem dungeon selecionada" — evita recarregar todas as seasons
+  // ao deselecionar uma dungeon (§4.2 do relatório).
+  let aggregateArcData: ArcEntry[] | null = null;
 
+  // Callback chamado quando o usuário seleciona uma season nos chips do modo multi.
+  // Pré-carrega o impacto de afixos antes de renderizar para que a tooltip já tenha
+  // as cores corretas ao exibir a view de comparação.
   const onSelectSeason = async (seasonId: number | null): Promise<void> => {
     comparisonSeasonId = seasonId;
 
@@ -61,14 +66,38 @@ export function initArc(
     renderMultiArc(container, selectedDungeons, lastMultiData, sharedSeasons, comparisonSeasonId, onSelectSeason, affixImpactCache);
   };
 
-  subscribe(async (state) => {
+  const render = async (state: import("../types.js").AppState): Promise<void> => {
+    // Modo agregado: nenhuma dungeon selecionada — exibe média de todas as dungeons.
     if (state.selectedDungeons.length === 0) {
       lastSelectionKey = "";
       lastSingleData = [];
-      container.replaceChildren(emptyMsg);
+      lastMultiData.clear();
+
+      if (aggregateArcData === null) {
+        const allSeasons = manifest.seasons
+          .filter((s) => s.id <= MAX_SEASON && !DISABLED_SEASONS.has(s.id))
+          .sort((a, b) => a.id - b.id);
+
+        const entries = await Promise.all(
+          allSeasons.map(async (s, i) => {
+            await loadSeason(s.id);
+            const rows = await getWeeklyArcAllDungeons(conn, s.id);
+            return { season: s, rows, colorIndex: i, secondaryAffixImpact: new Map<number, number>() };
+          }),
+        );
+
+        // Guarda de concorrência: descarta resultado se a seleção mudou durante o fetch.
+        if (getState().selectedDungeons.length !== 0) return;
+        aggregateArcData = entries;
+      }
+
+      // showAffixes=false no modo agregado pois secondaryAffixImpact não é calculado aqui.
+      renderArc(container, "All Dungeons", aggregateArcData, state.selectedSeasonForArc, false);
       return;
     }
 
+    // Modo multi dungeon: reutiliza dados já carregados para dungeons que já estavam
+    // na seleção anterior, carregando apenas as novas (§4.3 do relatório).
     if (state.selectedDungeons.length > 1) {
       const selectionKey = [...state.selectedDungeons].sort().join(",");
 
@@ -77,6 +106,7 @@ export function initArc(
         const newMultiData = new Map<number, ArcEntry[]>();
 
         for (const dungeonId of state.selectedDungeons) {
+          // Reutiliza dados existentes para dungeons já carregadas.
           if (lastMultiData.has(dungeonId)) {
             newMultiData.set(dungeonId, lastMultiData.get(dungeonId)!);
             continue;
@@ -95,6 +125,8 @@ export function initArc(
                 season: s,
                 rows,
                 colorIndex: i,
+                // Afixos secundários não são pré-calculados no modo multi — carregados
+                // sob demanda em onSelectSeason quando o usuário seleciona uma season.
                 secondaryAffixImpact: new Map<number, number>(),
               };
             }),
@@ -102,6 +134,7 @@ export function initArc(
           newMultiData.set(dungeonId, entries);
         }
 
+        // Guarda de concorrência: descarta se a seleção mudou durante o fetch assíncrono.
         const currentKey = [...getState().selectedDungeons].sort().join(",");
         if (currentKey !== selectionKey) return;
 
@@ -114,6 +147,8 @@ export function initArc(
         .map((id) => manifest.dungeons.find((d) => d.id === id))
         .filter((d): d is DungeonMeta => d !== undefined);
 
+      // sharedSeasons: seasons em que TODAS as dungeons selecionadas aparecem —
+      // usadas para habilitar os chips de comparação por temporada (§3.2 do relatório).
       const sharedSeasons = computeSharedSeasons(
         manifest.seasons,
         state.selectedDungeons,
@@ -124,7 +159,7 @@ export function initArc(
       return;
     }
 
-    // single dungeon mode
+    // Modo single dungeon: exibe uma linha por season em que a dungeon apareceu (T2).
     const dungeonId = state.selectedDungeons[0];
     const selectionKey = String(dungeonId);
 
@@ -133,6 +168,7 @@ export function initArc(
         .filter((s) => s.dungeonIds.includes(dungeonId) && s.id <= MAX_SEASON && !DISABLED_SEASONS.has(s.id))
         .sort((a, b) => a.id - b.id);
 
+      // Busca dados semanais e impacto de afixos em paralelo para cada season.
       lastSingleData = await Promise.all(
         activeSeasonsForDungeon.map(async (s, i) => {
           await loadSeason(s.id);
@@ -147,6 +183,7 @@ export function initArc(
         }),
       );
 
+      // Guarda de concorrência: se o usuário trocou de dungeon durante o fetch, descarta.
       const currentAfterFetch = getState().selectedDungeons;
       if (currentAfterFetch.length !== 1 || currentAfterFetch[0] !== dungeonId) return;
       lastSelectionKey = selectionKey;
@@ -157,5 +194,8 @@ export function initArc(
     if (!dungeon) return;
 
     renderArc(container, dungeon.name, lastSingleData, state.selectedSeasonForArc);
-  });
+  };
+
+  subscribe(render);
+  await render(getState());
 }

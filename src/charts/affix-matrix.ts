@@ -2,12 +2,16 @@ import type { AffixMatrixData, AffixMatrixRow } from "../types.js";
 import { FONT } from "../theme.js";
 import { scaleDiverging, interpolateRdYlGn, color as d3color } from "d3";
 
+// Escala divergente Red-Yellow-Green com domínio [-2, 0, +2].
+// Deltas positivos (dungeon mais fácil) → verde; negativos → vermelho; zero → amarelo.
+// Valores fora do intervalo são truncados nas extremidades da escala (§3.3 do relatório).
 const colorScale = scaleDiverging(interpolateRdYlGn).domain([-2, 0, 2]);
 
 const TYRANNICAL_AFFIX_ID = 9;
 const FORTIFIED_AFFIX_ID = 10;
 
-// Singleton tooltip element shared across renders
+// Tooltip singleton compartilhado entre todas as instâncias do heatmap (modo multi dungeon).
+// Um único elemento evita múltiplos tooltips sobrepostos e reduz garbage collection.
 let tooltipEl: HTMLElement | null = null;
 
 let rowHighlightStyleInjected = false;
@@ -47,6 +51,10 @@ function ensureTooltip(): HTMLElement {
   return tooltipEl;
 }
 
+// cellStyle: calcula cor de fundo e de texto para uma célula do heatmap.
+// O texto é escuro (#1a1a22) em células claras (luminância > 0.55) e claro em células escuras,
+// garantindo contraste legível em toda a escala RdYlGn (§3.3 do relatório).
+// Também usada pelo Arc Chart para colorir afixos nas tooltips — codificação compartilhada.
 export function cellStyle(delta: number | null): { bg: string; text: string } {
   if (delta === null) return { bg: "#1a1a22", text: "#2e2e38" };
   const bg = colorScale(Math.max(-2, Math.min(2, delta)));
@@ -132,14 +140,24 @@ function directionLabel(d: number | null): string {
   return "neutral";
 }
 
+// Renderiza o heatmap de afixos como uma tabela HTML.
+// Usa tabela HTML em vez de SVG porque o layout tabular (linhas × colunas) é
+// trivial com CSS e não requer cálculo manual de coordenadas.
+// selectedCol controla qual coluna está em destaque — altera opacidade das demais
+// e ordena os afixos secundários por magnitude do delta naquela coluna (§3.3).
 export function renderAffixMatrix(
   container: HTMLElement,
   data: AffixMatrixData,
   onSeasonSelect: (seasonId: number | null) => void,
   affixOrder?: number[],
+  initialSelectedCol?: number | "avg",
 ): void {
   ensureRowHighlightStyle();
-  let selectedCol: number | "avg" = "avg";
+  // Valida que a coluna inicial existe nos dados; cai para "avg" caso contrário.
+  let selectedCol: number | "avg" =
+    typeof initialSelectedCol === "number" && data.seasonIds.includes(initialSelectedCol)
+      ? initialSelectedCol
+      : "avg";
   const tooltip = ensureTooltip();
 
   function showTooltip(
@@ -241,6 +259,10 @@ export function renderAffixMatrix(
 
     const primaryRows = data.rows.filter((r) => r.isPrimary);
     const secondaryUnsorted = data.rows.filter((r) => !r.isPrimary);
+    // Ordenação dos afixos secundários:
+    // — affixOrder fornecido (modo multi): ordem global pré-calculada para alinhar linhas.
+    // — sem affixOrder: ordena por |delta| da coluna selecionada (afixo mais impactante no topo).
+    // Isso implementa a ordenação dinâmica descrita em §3.3 do relatório.
     const secondaryRows = affixOrder
       ? [...secondaryUnsorted].sort((a, b) => {
           const ai = affixOrder.indexOf(a.affixId);
@@ -299,6 +321,9 @@ export function renderAffixMatrix(
   function appendDataRow(tbody: HTMLElement, row: AffixMatrixRow): void {
     const tr = document.createElement("tr");
     tr.dataset.affixId = String(row.affixId);
+    // Highlight sincronizado: ao passar o mouse em uma linha, todas as linhas com o
+    // mesmo afixo em outros heatmaps (modo multi dungeon) também são destacadas.
+    // querySelectorAll por data-affix-id evita acoplamento entre as instâncias.
     tr.addEventListener("mouseenter", () => {
       document
         .querySelectorAll<HTMLElement>(`tr[data-affix-id="${row.affixId}"]`)
