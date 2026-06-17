@@ -42,6 +42,8 @@
 
 > Justifique o design visual utilizando o Ranking de Eficácia de Canais (Munzner). Explique a escolha dos marcadores, canais visuais, mecanismos de interação e como a coordenação entre as visões reduz a carga cognitiva do usuário. Explore também a Taxonomia de Interações.
 
+[Falar da taxonomia de interações também]
+
 ### Dungeon Browser
 
 - Explicar que o Dungeon Browser já separa as dungeons por seasons ordenadas por mais difíceis e fáceis.
@@ -87,3 +89,9 @@ Um heatmap onde as colunas representam as seasons com uma adicional com a média
 - Cada célula representa o impacto dos afixos em em relação a key mediana da dungeon naquela season [VERIFICAR NO CODIGO].
 - Há um heatmap por dungeon selecionada, dispostos lado a lado e com os mesmos número e ordenação dos eixos para facilitar a comparação visual entre as dungeons.
 - Quando nenhuma dungeon é selecionada, o gráfico mostra um agregado para todas as dungeons, mostrando como cada afixo impacta na dificuldade geral das dungeons.
+- A cor de cada célula usada no heatmap é carregada para o texto indicando quais afixos estão em cada semana no Arc Chart, facilitando identificar se aquele afixo ajudou ou atrapalhou na dificuldade daquela semana.
+
+## Implementation
+
+[Contar rapidamente como está a estrutura do projeto, como o estado é gerenciado, como as escalas estão sendo calculadas e a lógica de atualização do DOM com o D3.js]
+[Contar sobre o cache do agregado no Affix para todas as dungeons e Arc para todas as dungeons para evitar reload lento dos charts quando as dungeons forem deselecionadas]
