@@ -2,6 +2,61 @@ import type { AffixMatrixData, AffixMatrixRow } from "../types.js";
 import { FONT } from "../theme.js";
 import { scaleDiverging, interpolateRdYlGn, color as d3color } from "d3";
 
+const AFFIX_DESCRIPTIONS: Record<string, string> = {
+  Afflicted:
+    "Espíritos surgem e lançam um debuff de redução de aceleração e movimento se não forem curados ou dissipados.",
+  Awakened:
+    "Obeliscos pela masmorra permitem pular pacotes de inimigos e invocam mini-chefes.",
+  Beguiling:
+    "Emissárias de Azshara surgem com diferentes auras mágicas desafiadoras pela masmorra.",
+  Bolstering:
+    "Inimigos normais fortalecem a vida e o dano de aliados próximos ao morrerem.",
+  Bursting:
+    "Inimigos normais mortos causam dano de natureza contínuo e cumulativo a todo o grupo.",
+  Encrypted:
+    "Relíquias invocam autômatos que concedem diferentes bônus ao grupo quando destruídos.",
+  Entangling:
+    "Vinhas prendem jogadores periodicamente, exigindo movimento rápido para não causar atordoamento.",
+  Explosive:
+    "Orbes surgem em combate e explodem causando dano massivo ao grupo se não forem destruídos rapidamente.",
+  Fortified:
+    "Inimigos normais têm mais vida e causam significativamente mais dano.",
+  Grievous:
+    "Jogadores feridos sofrem dano contínuo crescente até serem curados acima de 90% da vida.",
+  Incorporeal:
+    "Seres intangíveis surgem e reduzem drasticamente o dano e a cura do grupo, exigindo feitiços de controle de grupo.",
+  Infested:
+    "Alguns inimigos possuem um parasita que cura aliados passivamente e salta para outros hospedeiros ao morrer.",
+  Inspiring:
+    "Certos inimigos emitem uma aura que torna seus aliados próximos imunes a feitiços de controle de grupo.",
+  Necrotic:
+    "Ataques corpo a corpo de inimigos aplicam um debuff cumulativo que causa dano e reduz a cura recebida pelo alvo.",
+  Quaking:
+    "Jogadores emitem ondas de choque periodicamente que causam dano a aliados próximos e interrompem lançamentos de feitiços.",
+  Raging:
+    "Inimigos normais se enfurecem ao atingir 30% de vida, imunes a controle de grupo e causando muito mais dano.",
+  Reaping:
+    "Inimigos mortos ressurgem em massa como espíritos para atacar o grupo a cada 20% do progresso da masmorra concluído.",
+  Sanguine:
+    "Inimigos normais mortos deixam poças de sangue no chão que curam inimigos e causam dano aos jogadores.",
+  Shrouded:
+    "Infiltradores disfarçados entre inimigos concedem um bônus cumulativo de atributos ao grupo quando derrotados.",
+  Skittish:
+    "Tanques geram consideravelmente menos ameaça, tornando mais difícil manter os inimigos longe dos outros jogadores.",
+  Spiteful:
+    "Espectros surgem dos cadáveres de inimigos normais e perseguem jogadores aleatórios causando alto dano corpo a corpo.",
+  Storming:
+    "Tornados surgem periodicamente em combate corpo a corpo, causando dano e repelindo jogadores atingidos.",
+  Teeming:
+    "Uma quantidade adicional de inimigos normais está presente, exigindo derrotar mais inimigos para concluir a masmorra.",
+  Tormented:
+    "Tenentes do Carcereiro estão espalhados pela masmorra e concedem poderes de ânima ao grupo quando derrotados.",
+  Tyrannical:
+    "Chefes das masmorras têm mais vida e causam significativamente mais dano.",
+  Volcanic:
+    "Erupções vulcânicas surgem periodicamente sob jogadores à distância em combate, causando dano e lançando-os para cima.",
+};
+
 // Escala divergente Red-Yellow-Green com domínio [-2, 0, +2].
 // Deltas positivos (dungeon mais fácil) → verde; negativos → vermelho; zero → amarelo.
 // Valores fora do intervalo são truncados nas extremidades da escala (§3.3 do relatório).
@@ -135,8 +190,10 @@ function fmt(d: number | null): string {
 
 function directionLabel(d: number | null): string {
   if (d === null) return "no data";
-  if (d > 0.08) return "easier";
-  if (d < -0.08) return "harder";
+  if (d > 1) return "much easier";
+  if (d > 0.25) return "easier";
+  if (d < -1) return "much harder";
+  if (d < -0.25) return "harder";
   return "neutral";
 }
 
@@ -155,7 +212,8 @@ export function renderAffixMatrix(
   ensureRowHighlightStyle();
   // Valida que a coluna inicial existe nos dados; cai para "avg" caso contrário.
   let selectedCol: number | "avg" =
-    typeof initialSelectedCol === "number" && data.seasonIds.includes(initialSelectedCol)
+    typeof initialSelectedCol === "number" &&
+    data.seasonIds.includes(initialSelectedCol)
       ? initialSelectedCol
       : "avg";
   const tooltip = ensureTooltip();
@@ -173,7 +231,7 @@ export function renderAffixMatrix(
     valLine.textContent = `${fmt(val)} keys (${directionLabel(val)})`;
 
     const subLine = document.createElement("div");
-    subLine.style.cssText = `font-size:${FONT.small}px;color:#71717a;`;
+    subLine.style.cssText = `font-size:${FONT.medium}px;color:#71717a;`;
     subLine.textContent = `${affixName} · ${colLabel}`;
 
     tooltip.appendChild(valLine);
@@ -183,6 +241,29 @@ export function renderAffixMatrix(
 
   function hideTooltip(): void {
     tooltip.style.display = "none";
+  }
+
+  function showAffixDescriptionTooltip(row: AffixMatrixRow): void {
+    const description = AFFIX_DESCRIPTIONS[row.affixName];
+    if (!description) return;
+    const labelColor = row.isPrimary
+      ? row.isFortified
+        ? "#3b82f6"
+        : "#f97316"
+      : "#a1a1aa";
+    tooltip.innerHTML = "";
+
+    const nameLine = document.createElement("div");
+    nameLine.style.cssText = `font-size:${FONT.large}px;font-weight:700;color:${labelColor};margin-bottom:5px;`;
+    nameLine.textContent = row.affixName;
+
+    const descLine = document.createElement("div");
+    descLine.style.cssText = `font-size:${FONT.small}px;color:#d4d4d8;max-width:260px;line-height:1.5;`;
+    descLine.textContent = description;
+
+    tooltip.appendChild(nameLine);
+    tooltip.appendChild(descLine);
+    tooltip.style.display = "block";
   }
 
   function render(): void {
@@ -351,6 +432,13 @@ export function renderAffixMatrix(
       `color:${labelColor}`,
     ].join(";");
     labelTd.textContent = row.affixName;
+    if (AFFIX_DESCRIPTIONS[row.affixName]) {
+      labelTd.style.cursor = "help";
+      labelTd.addEventListener("mouseenter", () =>
+        showAffixDescriptionTooltip(row),
+      );
+      labelTd.addEventListener("mouseleave", hideTooltip);
+    }
     tr.appendChild(labelTd);
 
     for (const seasonId of data.seasonIds) {
